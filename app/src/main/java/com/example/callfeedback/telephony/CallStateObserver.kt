@@ -5,7 +5,7 @@ import android.telephony.PhoneStateListener
 import android.telephony.TelephonyManager
 
 @Suppress("DEPRECATION")
-
+@Deprecated("deprecated")
 class CallStateObserver(
     context: Context,
     private val onCallStart: () -> Unit,
@@ -22,6 +22,7 @@ class CallStateObserver(
                     when (state) {
                         TelephonyManager.CALL_STATE_OFFHOOK -> onCallStart()
                         TelephonyManager.CALL_STATE_IDLE -> onCallEnd()
+                        TelephonyManager.CALL_STATE_RINGING -> onCallStart()
                     }
                 }
             },
