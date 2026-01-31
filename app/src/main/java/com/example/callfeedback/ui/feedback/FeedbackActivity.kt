@@ -12,9 +12,15 @@ class FeedbackActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        val prefillRating = intent?.getIntExtra("prefill_rating", 3) ?: 3
+        val prefillComment = intent?.getStringExtra("prefill_comment") ?: ""
+
         setContent {
             CallFeedbackTheme {
-                FeedbackScreen()
+                FeedbackScreen(
+                    initialRating = prefillRating,
+                    initialComment = prefillComment
+                )
             }
         }
     }

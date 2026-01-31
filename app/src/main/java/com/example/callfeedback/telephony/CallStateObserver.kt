@@ -40,7 +40,11 @@ class CallStateObserver(
             val initialState = telephonyManager.callState
             wasInCall = (initialState == TelephonyManager.CALL_STATE_OFFHOOK)
 
-            Log.d(TAG, "Initial call state: $initialState, wasInCall=$wasInCall")
+            // If we start while already in a call, mark observedCallStart so we will
+            // still emit onCallEnd when the call finishes. This covers the case where
+            // the app/service was started mid-call.
+            observedCallStart = wasInCall
+            Log.d(TAG, "Initial call state: $initialState, wasInCall=$wasInCall, observedCallStart=$observedCallStart")
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to read initial call state", t)
         }

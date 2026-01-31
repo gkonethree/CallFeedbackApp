@@ -1,17 +1,24 @@
 package com.example.callfeedback.ui.feedback
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun FeedbackScreen() {
+fun FeedbackScreen(
+    initialRating: Int = 3,
+    initialComment: String = "",
+    onSubmit: ((rating: Int, comment: String) -> Unit)? = null
+) {
 
-    var rating by remember { mutableStateOf(3f) }
-    var comment by remember { mutableStateOf("") }
+    var rating by remember { mutableStateOf(initialRating.toFloat()) }
+    var comment by remember { mutableStateOf(initialComment) }
+    val ctx = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -46,7 +53,8 @@ fun FeedbackScreen() {
 
         Button(
             onClick = {
-                // TODO: save feedback
+                onSubmit?.invoke(rating.toInt(), comment)
+                Toast.makeText(ctx, "Feedback queued", Toast.LENGTH_SHORT).show()
             },
             modifier = Modifier.fillMaxWidth()
         ) {

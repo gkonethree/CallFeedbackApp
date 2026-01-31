@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import com.example.callfeedback.R
 import com.example.callfeedback.telephony.CallStateObserver
 import com.example.callfeedback.ui.feedback.FeedbackActivity
+import com.example.callfeedback.ui.overlay.OverlayHelper
 
 class CallMonitorService : Service() {
 
@@ -37,32 +38,29 @@ class CallMonitorService : Service() {
         callStateObserver = CallStateObserver(
             context = this,
             onCallStart = {
-                Log.d(TAG, "Call started")
-                // Only enter foreground if not already in foreground
+
                 if (!isForegroundNotificationShown) {
                     startForeground(NOTIFICATION_ID, createInCallNotification())
                     isForegroundNotificationShown = true
                 }
             },
             onCallEnd = {
-                Log.d(TAG, "Call ended")
-                // Remove the in-call foreground notification if shown, then post feedback notification
+
                 if (isForegroundNotificationShown) {
                     stopForeground(true)
                     isForegroundNotificationShown = false
                 } else {
-                    // If we didn't show the foreground then ensure any stale notifications are removed
                     val mgr = getSystemService(NotificationManager::class.java)
                     mgr?.cancel(NOTIFICATION_ID)
                 }
 
                 // Try to show overlay if permission granted; otherwise fall back to notification
                 try {
-                    val overlayAllowed = com.example.callfeedback.service.OverlayHelper.canDrawOverlays(this)
+                    val overlayAllowed = OverlayHelper.canDrawOverlays(this)
                     if (overlayAllowed) {
                         //log
                         Log.d(TAG, "Showing overlay for feedback")
-                        com.example.callfeedback.service.OverlayHelper.showOverlay(this)
+                        OverlayHelper.showOverlay(this)
                     } else {
                         notifyFeedbackAvailable()
                     }
@@ -89,8 +87,8 @@ class CallMonitorService : Service() {
         val manager = getSystemService(NotificationManager::class.java)
         manager?.cancel(NOTIFICATION_ID)
         manager?.cancel(NOTIFICATION_ID + 1)
-        // Ensure overlay removed
-        com.example.callfeedback.service.OverlayHelper.removeOverlay(this)
+
+        OverlayHelper.removeOverlay(this)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -100,7 +98,7 @@ class CallMonitorService : Service() {
     // -------------------------
 
     private fun ensureChannelExists(manager: NotificationManager?) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
             manager ?: return
             val existing = manager.getNotificationChannel(CHANNEL_ID)
             if (existing == null) {
@@ -111,7 +109,7 @@ class CallMonitorService : Service() {
                 )
                 manager.createNotificationChannel(channel)
             }
-        }
+
     }
 
     private fun createInCallNotification(): Notification {
@@ -122,11 +120,8 @@ class CallMonitorService : Service() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 
-        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        val pendingIntentFlags =
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        } else {
-            PendingIntent.FLAG_UPDATE_CURRENT
-        }
 
         val pendingIntent = PendingIntent.getActivity(this, 0, feedbackIntent, pendingIntentFlags)
 
@@ -147,11 +142,8 @@ class CallMonitorService : Service() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 
-        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        val pendingIntentFlags =
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        } else {
-            PendingIntent.FLAG_UPDATE_CURRENT
-        }
 
         val pendingIntent = PendingIntent.getActivity(this, 0, feedbackIntent, pendingIntentFlags)
 
