@@ -11,7 +11,7 @@
     <FrameLayout
         android:id="@+id/overlay_container"
         android:layout_width="wrap_content"
-        android:layout_height="325dp"
+        android:layout_height="418dp"
         android:layout_gravity="center"
         android:layout_margin="24dp"
         android:background="@drawable/overlay_bg"
@@ -70,14 +70,15 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="@string/label_voice_quality"
+                        android:textAlignment="center"
                         android:textColor="#000000"
-                        android:textSize="14sp" />
+                        android:textSize="23sp" />
 
                 </LinearLayout>
 
                 <RatingBar
                     android:id="@+id/rating_voice_quality"
-                    style="?android:attr/ratingBarStyleSmall"
+                    style="?android:attr/ratingBarStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:clickable="true"

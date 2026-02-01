@@ -4,23 +4,26 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
-import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.RatingBar
+import android.widget.Toast
 import androidx.appcompat.view.ContextThemeWrapper
 import com.example.callfeedback.R
+import com.example.callfeedback.data.repository.FeedbackRepository
 import com.example.callfeedback.ui.feedback.FeedbackActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 
 object OverlayHelper {
@@ -88,15 +91,36 @@ object OverlayHelper {
             val nRating = ratingNetwork?.rating?.toInt()?.coerceIn(1, 5) ?: 5
             val comment = commentInput.text?.toString()?.trim().orEmpty()
 
-            val intent = Intent(context, FeedbackActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra("prefill_voice_rating", vRating)
-                putExtra("prefill_delays_rating", dRating)
-                putExtra("prefill_network_rating", nRating)
-                putExtra("prefill_comment", comment)
+            submitBtn.isEnabled = false
+
+            // Submit to backend
+            val repository = FeedbackRepository()
+            CoroutineScope(Dispatchers.Main).launch {
+                try {
+                    val result = repository.submitFeedback(vRating, dRating, nRating, comment)
+                    if (result.isSuccess) {
+                        Log.d(TAG, "Feedback submitted to backend successfully")
+                        Toast.makeText(context, "Feedback submitted", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Log.e(TAG, "Failed to submit feedback", result.exceptionOrNull())
+                        Toast.makeText(context, "Failed to submit feedback", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error submitting feedback", e)
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+
+                // Launch FeedbackActivity
+                val intent = Intent(context, FeedbackActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra("prefill_voice_rating", vRating)
+                    putExtra("prefill_delays_rating", dRating)
+                    putExtra("prefill_network_rating", nRating)
+                    putExtra("prefill_comment", comment)
+                }
+                context.startActivity(intent)
+                removeOverlay(context)
             }
-            context.startActivity(intent)
-            removeOverlay(context)
         }
 
         val params = WindowManager.LayoutParams().apply {
