@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Call Feedback</string>
+    <string name="overlay_title">Rate recent call</string>
+    <string name="label_voice_quality">Call quality</string>
+    <string name="label_delays">Delays</string>
+    <string name="label_network_reliability">Network reliability</string>
+    <string name="hint_comment">Add a short comment (optional)</string>
+    <string name="btn_close">Close</string>
+    <string name="btn_submit">Submit</string>
+</resources>
