@@ -17,6 +17,8 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.RatingBar
 import android.widget.Toast
+import android.widget.ToggleButton
+import android.widget.CheckBox
 import androidx.appcompat.view.ContextThemeWrapper
 import com.example.callfeedback.R
 import com.example.callfeedback.data.repository.FeedbackRepository
@@ -67,59 +69,139 @@ object OverlayHelper {
 
         val layout = inflater.inflate(R.layout.overlay_feedback, null)
 
-        // rating and controls
-        val ratingVoice = layout.findViewById<RatingBar>(R.id.rating_voice_quality)
-        val ratingDelays = layout.findViewById<RatingBar>(R.id.rating_delays)
-        val ratingNetwork = layout.findViewById<RatingBar>(R.id.rating_network_reliability)
+        // Voice quality rating - using discrete stars
+        val stars = listOf(
+            layout.findViewById<ImageButton>(R.id.star_1),
+            layout.findViewById<ImageButton>(R.id.star_2),
+            layout.findViewById<ImageButton>(R.id.star_3),
+            layout.findViewById<ImageButton>(R.id.star_4),
+            layout.findViewById<ImageButton>(R.id.star_5)
+        )
+
+        var selectedRating = 0
+
+        // Define updateStars function before using it
+        fun updateStars(starList: List<ImageButton?>, rating: Int) {
+            starList.forEachIndexed { index, star ->
+                if (index < rating) {
+                    star?.setImageResource(R.drawable.ic_star_filled)
+                } else {
+                    star?.setImageResource(R.drawable.ic_star_empty)
+                }
+            }
+        }
+
+        // Set up star click listeners
+        stars.forEachIndexed { index, star ->
+            star?.setOnClickListener {
+                selectedRating = index + 1
+                updateStars(stars, selectedRating)
+            }
+        }
+
+        // Audio issues toggle buttons
+        val audioIssueDropped = layout.findViewById<ToggleButton>(R.id.audio_issue_dropped)
+        val audioIssueHearOther = layout.findViewById<ToggleButton>(R.id.audio_issue_hear_other)
+        val audioIssueHearMe = layout.findViewById<ToggleButton>(R.id.audio_issue_hear_me)
+        val audioIssueBackgroundNoise = layout.findViewById<ToggleButton>(R.id.audio_issue_background_noise)
+        val audioIssueEcho = layout.findViewById<ToggleButton>(R.id.audio_issue_echo)
+
+        // Set text colors for audio issue buttons based on checked state
+        val audioButtons = listOf(audioIssueDropped, audioIssueHearOther, audioIssueHearMe, audioIssueBackgroundNoise, audioIssueEcho)
+        audioButtons.forEach { button ->
+            button?.setOnCheckedChangeListener { _, isChecked ->
+                button.setTextColor(if (isChecked) android.graphics.Color.WHITE else android.graphics.Color.BLACK)
+            }
+            // Set initial color (black for unchecked)
+            button?.setTextColor(if (button.isChecked) android.graphics.Color.WHITE else android.graphics.Color.BLACK)
+        }
+
+        // Environment checkboxes (single selection)
+        val envIndoor = layout.findViewById<CheckBox>(R.id.env_indoor)
+        val envOutdoor = layout.findViewById<CheckBox>(R.id.env_outdoor)
+        val envVehicle = layout.findViewById<CheckBox>(R.id.env_vehicle)
+        val envNoisyArea = layout.findViewById<CheckBox>(R.id.env_noisy_area)
+
+        val environmentCheckboxes = listOf(envIndoor, envOutdoor, envVehicle, envNoisyArea)
+
+        // Set up single-selection logic for environment
+        environmentCheckboxes.forEach { checkbox ->
+            checkbox?.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    environmentCheckboxes.forEach { other ->
+                        if (other != checkbox) {
+                            other?.isChecked = false
+                        }
+                    }
+                }
+            }
+        }
+
         val commentInput = layout.findViewById<EditText>(R.id.overlay_comment)
         val closeBtn = layout.findViewById<ImageButton>(R.id.overlay_close)
         val submitBtn = layout.findViewById<Button>(R.id.overlay_submit)
-        val container = layout.findViewById<View>(R.id.overlay_container)
-
-        // defaults
-        ratingVoice?.rating = 5f
-        ratingDelays?.rating = 5f
-        ratingNetwork?.rating = 5f
+        val rootView = layout.findViewById<View>(R.id.overlay_root)
 
         closeBtn?.setOnClickListener {
             removeOverlay(context)
         }
 
+        // Close overlay when tapping outside the card
+        rootView?.setOnClickListener {
+            removeOverlay(context)
+        }
+
+        // Prevent closing when tapping on the card itself
+        layout.findViewById<View>(R.id.overlay_container)?.setOnClickListener {
+            // Do nothing - consume the click
+        }
+
         submitBtn?.setOnClickListener {
-            val vRating = ratingVoice?.rating?.toInt()?.coerceIn(1, 5) ?: 5
-            val dRating = ratingDelays?.rating?.toInt()?.coerceIn(1, 5) ?: 5
-            val nRating = ratingNetwork?.rating?.toInt()?.coerceIn(1, 5) ?: 5
-            val comment = commentInput.text?.toString()?.trim().orEmpty()
+            // Collect voice quality (1-5, null if not set)
+            val voiceQuality = if (selectedRating > 0) selectedRating else null
+
+            // Collect audio issues
+            val audioIssues = mutableListOf<String>()
+            if (audioIssueDropped?.isChecked == true) audioIssues.add("call_dropped")
+            if (audioIssueHearOther?.isChecked == true) audioIssues.add("could_not_hear_other")
+            if (audioIssueHearMe?.isChecked == true) audioIssues.add("other_could_not_hear_me")
+            if (audioIssueBackgroundNoise?.isChecked == true) audioIssues.add("background_noise")
+            if (audioIssueEcho?.isChecked == true) audioIssues.add("echo")
+
+            // Collect environment (single selection)
+            val environment = when {
+                envIndoor?.isChecked == true -> "indoor"
+                envOutdoor?.isChecked == true -> "outdoor"
+                envVehicle?.isChecked == true -> "in_vehicle"
+                envNoisyArea?.isChecked == true -> "noisy_area"
+                else -> null
+            }
+
+            val comment = commentInput?.text?.toString()?.trim()
 
             submitBtn.isEnabled = false
+
+            Log.d(TAG, "Submitting feedback - Voice Quality: $voiceQuality, Audio Issues: $audioIssues, Environment: $environment, Comment: $comment")
 
             // Submit to backend
             val repository = FeedbackRepository()
             CoroutineScope(Dispatchers.Main).launch {
                 try {
-                    val result = repository.submitFeedback(vRating, dRating, nRating, comment)
+                    val result = repository.submitFeedback(voiceQuality, audioIssues, environment, comment)
                     if (result.isSuccess) {
                         Log.d(TAG, "Feedback submitted to backend successfully")
                         Toast.makeText(context, "Feedback submitted", Toast.LENGTH_SHORT).show()
+                        removeOverlay(context)
                     } else {
                         Log.e(TAG, "Failed to submit feedback", result.exceptionOrNull())
                         Toast.makeText(context, "Failed to submit feedback", Toast.LENGTH_SHORT).show()
+                        submitBtn.isEnabled = true
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error submitting feedback", e)
                     Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    submitBtn.isEnabled = true
                 }
-
-                // Launch FeedbackActivity
-                val intent = Intent(context, FeedbackActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra("prefill_voice_rating", vRating)
-                    putExtra("prefill_delays_rating", dRating)
-                    putExtra("prefill_network_rating", nRating)
-                    putExtra("prefill_comment", comment)
-                }
-                context.startActivity(intent)
-                removeOverlay(context)
             }
         }
 

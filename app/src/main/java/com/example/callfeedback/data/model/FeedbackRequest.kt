@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FeedbackRequest(
-    val voiceQuality: Int,
-    val delays: Int,
-    val networkReliability: Int,
-    val comment: String
+    val rating: Int? = null,  // Voice quality rating 1-5
+    val audioIssues: List<String>? = null,  // List of audio issue tags
+    val environment: String? = null,  // Environment type (indoor, outdoor, in_vehicle, noisy_area)
+    val comment: String? = null  // User comments
 )

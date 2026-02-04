@@ -9,7 +9,7 @@ import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "http://localhost:8000/"
+    private const val BASE_URL = "http://127.0.0.1:8000/"
     private const val TIMEOUT_SECONDS = 15L
 
     private val json = Json { ignoreUnknownKeys = true }

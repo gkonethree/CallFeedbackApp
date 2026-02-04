@@ -24,18 +24,19 @@ class FeedbackRepository {
     }
 
     suspend fun submitFeedback(
-        voiceQuality: Int,
-        delays: Int,
-        networkReliability: Int,
-        comment: String
+        voiceQuality: Int?,
+        audioIssues: List<String>?,
+        environment: String?,
+        comment: String?
     ): Result<Unit> = try {
         val request = FeedbackRequest(
-            voiceQuality = voiceQuality,
-            delays = delays,
-            networkReliability = networkReliability,
-            comment = comment
+            rating = voiceQuality,
+            audioIssues = audioIssues?.takeIf { it.isNotEmpty() },
+            environment = environment,
+            comment = comment?.takeIf { it.isNotEmpty() }
         )
         retry {
+            Log.d("FeedbackRepository", "Calling submitFeedback API")
             ApiClient.feedbackApi.submitFeedback(request)
         }
         Log.d(TAG, "Feedback submitted successfully")
