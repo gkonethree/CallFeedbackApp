@@ -25,6 +25,7 @@ import android.util.Log
 class MainActivity : ComponentActivity() {
 
     private var overlayPermissionRequested = false
+
     private val requestPhonePermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
@@ -43,7 +44,19 @@ class MainActivity : ComponentActivity() {
             } else {
                 Log.d("MainActivity", "POST_NOTIFICATIONS denied")
             }
-            // Start the service regardless of notification permission; notification will appear only if allowed
+            requestLocationPermissions()
+        }
+
+    private val requestLocationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            if (isGranted) {
+                Log.d("MainActivity", "ACCESS_FINE_LOCATION granted")
+            } else {
+                Log.d("MainActivity", "ACCESS_FINE_LOCATION denied - location won't be collected")
+            }
+            // Start service regardless of location permission
             startCallMonitorService()
         }
 
@@ -85,12 +98,26 @@ class MainActivity : ComponentActivity() {
                     Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-                startCallMonitorService()
+                requestLocationPermissions()
             } else {
                 requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         } else {
+            requestLocationPermissions()
+        }
+    }
+
+    private fun requestLocationPermissions() {
+        // Try to request fine location permission (more accurate)
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
             startCallMonitorService()
+        } else {
+            // Request fine location permission
+            requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 

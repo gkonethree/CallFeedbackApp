@@ -10,9 +10,15 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.callfeedback.R
+import com.example.callfeedback.data.repository.FeedbackRepository
 import com.example.callfeedback.telephony.CallStateObserver
+import com.example.callfeedback.data.model.UserFeedback
 import com.example.callfeedback.ui.feedback.FeedbackActivity
 import com.example.callfeedback.ui.overlay.OverlayHelper
+import com.example.callfeedback.util.DeviceMetadataCollector
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class CallMonitorService : Service() {
 
@@ -29,7 +35,7 @@ class CallMonitorService : Service() {
         super.onCreate()
         Log.d(TAG, "Service created")
 
-        // Clear any leftover notifications from previous runs to avoid always-visible notifications
+        // Clear any leftover notifications
         val manager = getSystemService(NotificationManager::class.java)
         manager?.cancel(NOTIFICATION_ID)
         manager?.cancel(NOTIFICATION_ID + 1)
@@ -46,27 +52,14 @@ class CallMonitorService : Service() {
             onCallEnd = {
 
                 if (isForegroundNotificationShown) {
-                    stopForeground(true)
+                    stopForeground(STOP_FOREGROUND_REMOVE)
                     isForegroundNotificationShown = false
                 } else {
                     val mgr = getSystemService(NotificationManager::class.java)
                     mgr?.cancel(NOTIFICATION_ID)
                 }
 
-                // Try to show overlay if permission granted; otherwise fall back to notification
-                try {
-                    val overlayAllowed = OverlayHelper.canDrawOverlays(this)
-                    if (overlayAllowed) {
-                        //log
-                        Log.d(TAG, "Showing overlay for feedback")
-                        OverlayHelper.showOverlay(this)
-                    } else {
-                        notifyFeedbackAvailable()
-                    }
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Overlay failed, falling back to notification", t)
-                    notifyFeedbackAvailable()
-                }
+                collectAndHandleCallEnd()
             }
         )
 
@@ -92,22 +85,19 @@ class CallMonitorService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // -------------------------
-    // Notification helpers
-    // -------------------------
 
     private fun ensureChannelExists(manager: NotificationManager?) {
 
-            manager ?: return
-            val existing = manager.getNotificationChannel(CHANNEL_ID)
-            if (existing == null) {
-                val channel = NotificationChannel(
-                    CHANNEL_ID,
-                    "Call Monitor",
-                    NotificationManager.IMPORTANCE_LOW
-                )
-                manager.createNotificationChannel(channel)
-            }
+        manager ?: return
+        val existing = manager.getNotificationChannel(CHANNEL_ID)
+        if (existing == null) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Call Monitor",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            manager.createNotificationChannel(channel)
+        }
 
     }
 
@@ -163,5 +153,93 @@ class CallMonitorService : Service() {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
         startActivity(intent)
+    }
+
+    private fun submitFeedbackToRepository(feedback: UserFeedback) {
+
+        val repository = FeedbackRepository()
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val result = repository.submitFeedback(feedback)
+
+                if (result.isSuccess) {
+                    Log.d(TAG, "Feedback submitted to backend successfully")
+                } else {
+                    Log.e(TAG, "Failed to submit feedback to backend", result.exceptionOrNull())
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error submitting feedback to backend", e)
+            }
+        }
+    }
+
+    private fun collectAndHandleCallEnd() {
+        val metadataCollector = DeviceMetadataCollector(this)
+        val networkGeneration = metadataCollector.getNetworkGeneration()
+        val signalStrength = metadataCollector.getSignalStrength()
+        val timestamp = metadataCollector.getTimestamp()
+
+        metadataCollector.getLocation { latitude, longitude ->
+            showFeedbackUI(networkGeneration, signalStrength, latitude, longitude, timestamp)
+        }
+    }
+
+    private fun showFeedbackUI(
+        networkGeneration: String,
+        signalStrength: Int?,
+        latitude: Double?,
+        longitude: Double?,
+        timestamp: Long
+    ) {
+        try {
+            val overlayAllowed = OverlayHelper.canDrawOverlays(this)
+            if (overlayAllowed) {
+
+                OverlayHelper.showOverlay(this) { feedback ->
+                    if (feedback != null) {
+                        val feedbackWithMetadata = feedback.copy(
+                            networkGeneration = networkGeneration,
+                            signalStrength = signalStrength,
+                            latitude = latitude,
+                            longitude = longitude,
+                            timestamp = timestamp
+                        )
+                        Log.d(TAG, "Received feedback from overlay: $feedbackWithMetadata")
+                        submitFeedbackToRepository(feedbackWithMetadata)
+                    } else {
+
+                        val metadataOnlyFeedback = UserFeedback(
+                            networkGeneration = networkGeneration,
+                            signalStrength = signalStrength,
+                            latitude = latitude,
+                            longitude = longitude,
+                            timestamp = timestamp
+                        )
+                        submitFeedbackToRepository(metadataOnlyFeedback)
+                    }
+                }
+            } else {
+                val metadataOnlyFeedback = UserFeedback(
+                    networkGeneration = networkGeneration,
+                    signalStrength = signalStrength,
+                    latitude = latitude,
+                    longitude = longitude,
+                    timestamp = timestamp
+                )
+                submitFeedbackToRepository(metadataOnlyFeedback)
+                notifyFeedbackAvailable()
+            }
+        } catch (@Suppress("UNUSED_PARAMETER") t: Throwable) {
+            Log.w(TAG, "Error showing feedback UI, submitting metadata-only feedback")
+            val metadataOnlyFeedback = UserFeedback(
+                networkGeneration = networkGeneration,
+                signalStrength = signalStrength,
+                latitude = latitude,
+                longitude = longitude,
+                timestamp = timestamp
+            )
+            submitFeedbackToRepository(metadataOnlyFeedback)
+            notifyFeedbackAvailable()
+        }
     }
 }

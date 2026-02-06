@@ -15,18 +15,15 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.RatingBar
-import android.widget.Toast
 import android.widget.ToggleButton
 import android.widget.CheckBox
 import androidx.appcompat.view.ContextThemeWrapper
 import com.example.callfeedback.R
-import com.example.callfeedback.data.repository.FeedbackRepository
-import com.example.callfeedback.ui.feedback.FeedbackActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.example.callfeedback.data.model.AudioIssue
+import com.example.callfeedback.data.model.Environment
+import com.example.callfeedback.data.model.UserFeedback
 import java.lang.ref.WeakReference
+
 
 object OverlayHelper {
 
@@ -50,7 +47,10 @@ object OverlayHelper {
         return intent
     }
 
-    fun showOverlay(context: Context) {
+    fun showOverlay(
+        context: Context,
+        onFeedbackResult: ((feedback: UserFeedback?) -> Unit)? = null
+    ) {
         if (overlayView != null) {
             Log.d(TAG, "overlay already shown")
             return
@@ -78,12 +78,12 @@ object OverlayHelper {
             layout.findViewById<ImageButton>(R.id.star_5)
         )
 
-        var selectedRating = 0
+        var selectedRating: Int? = null
 
         // Define updateStars function before using it
-        fun updateStars(starList: List<ImageButton?>, rating: Int) {
+        fun updateStars(starList: List<ImageButton?>, rating: Int?) {
             starList.forEachIndexed { index, star ->
-                if (index < rating) {
+                if (rating != null && index < rating) {
                     star?.setImageResource(R.drawable.ic_star_filled)
                 } else {
                     star?.setImageResource(R.drawable.ic_star_empty)
@@ -143,11 +143,15 @@ object OverlayHelper {
         val rootView = layout.findViewById<View>(R.id.overlay_root)
 
         closeBtn?.setOnClickListener {
+            Log.d(TAG, "Close button clicked - returning null feedback")
+            onFeedbackResult?.invoke(null)
             removeOverlay(context)
         }
 
         // Close overlay when tapping outside the card
         rootView?.setOnClickListener {
+            Log.d(TAG, "Outside tap detected - returning null feedback")
+            onFeedbackResult?.invoke(null)
             removeOverlay(context)
         }
 
@@ -158,55 +162,40 @@ object OverlayHelper {
 
         submitBtn?.setOnClickListener {
             // Collect voice quality (1-5, null if not set)
-            val voiceQuality = if (selectedRating > 0) selectedRating else null
+            val voiceQuality = selectedRating
 
             // Collect audio issues
-            val audioIssues = mutableListOf<String>()
-            if (audioIssueDropped?.isChecked == true) audioIssues.add("call_dropped")
-            if (audioIssueHearOther?.isChecked == true) audioIssues.add("could_not_hear_other")
-            if (audioIssueHearMe?.isChecked == true) audioIssues.add("other_could_not_hear_me")
-            if (audioIssueBackgroundNoise?.isChecked == true) audioIssues.add("background_noise")
-            if (audioIssueEcho?.isChecked == true) audioIssues.add("echo")
+            val audioIssues = mutableListOf<AudioIssue>()
+            if (audioIssueDropped?.isChecked == true) audioIssues.add(AudioIssue.CALL_DROPPED)
+            if (audioIssueHearOther?.isChecked == true) audioIssues.add(AudioIssue.COULD_NOT_HEAR_OTHER)
+            if (audioIssueHearMe?.isChecked == true) audioIssues.add(AudioIssue.OTHER_COULD_NOT_HEAR_ME)
+            if (audioIssueBackgroundNoise?.isChecked == true) audioIssues.add(AudioIssue.BACKGROUND_NOISE)
+            if (audioIssueEcho?.isChecked == true) audioIssues.add(AudioIssue.ECHO)
 
             // Collect environment (single selection)
             val environment = when {
-                envIndoor?.isChecked == true -> "indoor"
-                envOutdoor?.isChecked == true -> "outdoor"
-                envVehicle?.isChecked == true -> "in_vehicle"
-                envNoisyArea?.isChecked == true -> "noisy_area"
+                envIndoor?.isChecked == true -> Environment.INDOOR
+                envOutdoor?.isChecked == true -> Environment.OUTDOOR
+                envVehicle?.isChecked == true -> Environment.IN_VEHICLE
+                envNoisyArea?.isChecked == true -> Environment.NOISY_AREA
                 else -> null
             }
 
-            val comment = commentInput?.text?.toString()?.trim()
+            val comment = commentInput?.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
 
+            val feedback = UserFeedback(
+                voiceQuality = voiceQuality,
+                audioIssues = audioIssues.takeIf { it.isNotEmpty() },
+                environment = environment,
+                comment = comment
+            )
+
+            onFeedbackResult?.invoke(feedback)
             submitBtn.isEnabled = false
-
-            Log.d(TAG, "Submitting feedback - Voice Quality: $voiceQuality, Audio Issues: $audioIssues, Environment: $environment, Comment: $comment")
-
-            // Submit to backend
-            val repository = FeedbackRepository()
-            CoroutineScope(Dispatchers.Main).launch {
-                try {
-                    val result = repository.submitFeedback(voiceQuality, audioIssues, environment, comment)
-                    if (result.isSuccess) {
-                        Log.d(TAG, "Feedback submitted to backend successfully")
-                        Toast.makeText(context, "Feedback submitted", Toast.LENGTH_SHORT).show()
-                        removeOverlay(context)
-                    } else {
-                        Log.e(TAG, "Failed to submit feedback", result.exceptionOrNull())
-                        Toast.makeText(context, "Failed to submit feedback", Toast.LENGTH_SHORT).show()
-                        submitBtn.isEnabled = true
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error submitting feedback", e)
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                    submitBtn.isEnabled = true
-                }
-            }
+            removeOverlay(context)
         }
 
         val params = WindowManager.LayoutParams().apply {
-            // full-screen so root view can detect taps outside the card
             width = WindowManager.LayoutParams.MATCH_PARENT
             height = WindowManager.LayoutParams.MATCH_PARENT
             format = PixelFormat.TRANSLUCENT
