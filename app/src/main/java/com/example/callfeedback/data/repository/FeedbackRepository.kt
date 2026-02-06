@@ -2,7 +2,7 @@ package com.example.callfeedback.data.repository
 
 import android.util.Log
 import com.example.callfeedback.data.api.ApiClient
-import com.example.callfeedback.data.model.FeedbackRequest
+import com.example.callfeedback.data.model.UserFeedback
 
 class FeedbackRepository {
     companion object {
@@ -16,33 +16,19 @@ class FeedbackRepository {
                 return block()
             } catch (e: Exception) {
                 last = e
-                android.util.Log.w(TAG, "submit attempt ${attempt + 1} failed: ${e.message}")
+                Log.w(TAG, "submit attempt ${attempt + 1} failed: ${e.message}")
                 kotlinx.coroutines.delay(800)
             }
         }
         throw last ?: IllegalStateException("unknown error")
     }
 
-    suspend fun submitFeedback(
-        voiceQuality: Int?,
-        audioIssues: List<String>?,
-        environment: String?,
-        comment: String?
-    ): Result<Unit> = try {
-        val request = FeedbackRequest(
-            rating = voiceQuality,
-            audioIssues = audioIssues?.takeIf { it.isNotEmpty() },
-            environment = environment,
-            comment = comment?.takeIf { it.isNotEmpty() }
-        )
+    suspend fun submitFeedback(feedback: UserFeedback): Result<Unit> = try {
         retry {
-            Log.d("FeedbackRepository", "Calling submitFeedback API")
-            ApiClient.feedbackApi.submitFeedback(request)
+            ApiClient.feedbackApi.submitFeedback(feedback)
         }
-        Log.d(TAG, "Feedback submitted successfully")
         Result.success(Unit)
     } catch (e: Exception) {
-        Log.e(TAG, "Failed to submit feedback", e)
         Result.failure(e)
     }
 }

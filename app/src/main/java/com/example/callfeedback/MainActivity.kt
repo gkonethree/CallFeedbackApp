@@ -56,7 +56,6 @@ class MainActivity : ComponentActivity() {
             } else {
                 Log.d("MainActivity", "ACCESS_FINE_LOCATION denied - location won't be collected")
             }
-            // Start service regardless of location permission
             startCallMonitorService()
         }
 
@@ -92,7 +91,6 @@ class MainActivity : ComponentActivity() {
 
     private fun ensureNotificationPermissionAndStartService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+ requires runtime notification permission
             if (ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
@@ -108,7 +106,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestLocationPermissions() {
-        // Try to request fine location permission (more accurate)
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -116,17 +113,14 @@ class MainActivity : ComponentActivity() {
         ) {
             startCallMonitorService()
         } else {
-            // Request fine location permission
             requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
     private fun startCallMonitorService() {
         val intent = Intent(this, CallMonitorService::class.java)
-        // Start as a normal service (service will call startForeground only while a call is active)
         startService(intent)
 
-        // If overlay permission is not granted, open the system overlay settings so the user can enable it.
         try {
             if (!OverlayHelper.canDrawOverlays(this) && !overlayPermissionRequested) {
                 overlayPermissionRequested=true

@@ -72,7 +72,6 @@ class DeviceMetadataCollector(private val context: Context) {
     private fun getCellularNetworkType(): String {
         return try {
             val dataNetworkType = telephonyManager?.dataNetworkType
-            Log.d(TAG, "Data network type: $dataNetworkType")
             when (dataNetworkType) {
                 TelephonyManager.NETWORK_TYPE_GPRS,
                 TelephonyManager.NETWORK_TYPE_EDGE,
@@ -106,7 +105,6 @@ class DeviceMetadataCollector(private val context: Context) {
     @SuppressLint("MissingPermission")
     fun getSignalStrength(): Int? {
         return try {
-            Log.d(TAG, "Getting signal strength...")
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                 Log.w(TAG, "SDK_INT (${Build.VERSION.SDK_INT}) is less than Q (29), cannot get signal strength")

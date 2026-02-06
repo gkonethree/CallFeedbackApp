@@ -63,13 +63,11 @@ object OverlayHelper {
 
         val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-        // Use the app theme to inflate AppCompat views correctly in an overlay window
         val themedContext = ContextThemeWrapper(context, R.style.Theme_CallFeedback)
         val inflater = LayoutInflater.from(themedContext)
 
         val layout = inflater.inflate(R.layout.overlay_feedback, null)
 
-        // Voice quality rating - using discrete stars
         val stars = listOf(
             layout.findViewById<ImageButton>(R.id.star_1),
             layout.findViewById<ImageButton>(R.id.star_2),
@@ -80,7 +78,6 @@ object OverlayHelper {
 
         var selectedRating: Int? = null
 
-        // Define updateStars function before using it
         fun updateStars(starList: List<ImageButton?>, rating: Int?) {
             starList.forEachIndexed { index, star ->
                 if (rating != null && index < rating) {
@@ -91,7 +88,6 @@ object OverlayHelper {
             }
         }
 
-        // Set up star click listeners
         stars.forEachIndexed { index, star ->
             star?.setOnClickListener {
                 selectedRating = index + 1
@@ -99,24 +95,20 @@ object OverlayHelper {
             }
         }
 
-        // Audio issues toggle buttons
         val audioIssueDropped = layout.findViewById<ToggleButton>(R.id.audio_issue_dropped)
         val audioIssueHearOther = layout.findViewById<ToggleButton>(R.id.audio_issue_hear_other)
         val audioIssueHearMe = layout.findViewById<ToggleButton>(R.id.audio_issue_hear_me)
         val audioIssueBackgroundNoise = layout.findViewById<ToggleButton>(R.id.audio_issue_background_noise)
         val audioIssueEcho = layout.findViewById<ToggleButton>(R.id.audio_issue_echo)
 
-        // Set text colors for audio issue buttons based on checked state
         val audioButtons = listOf(audioIssueDropped, audioIssueHearOther, audioIssueHearMe, audioIssueBackgroundNoise, audioIssueEcho)
         audioButtons.forEach { button ->
             button?.setOnCheckedChangeListener { _, isChecked ->
                 button.setTextColor(if (isChecked) android.graphics.Color.WHITE else android.graphics.Color.BLACK)
             }
-            // Set initial color (black for unchecked)
             button?.setTextColor(if (button.isChecked) android.graphics.Color.WHITE else android.graphics.Color.BLACK)
         }
 
-        // Environment checkboxes (single selection)
         val envIndoor = layout.findViewById<CheckBox>(R.id.env_indoor)
         val envOutdoor = layout.findViewById<CheckBox>(R.id.env_outdoor)
         val envVehicle = layout.findViewById<CheckBox>(R.id.env_vehicle)
@@ -124,7 +116,6 @@ object OverlayHelper {
 
         val environmentCheckboxes = listOf(envIndoor, envOutdoor, envVehicle, envNoisyArea)
 
-        // Set up single-selection logic for environment
         environmentCheckboxes.forEach { checkbox ->
             checkbox?.setOnCheckedChangeListener { _, isChecked ->
                 if (isChecked) {
@@ -148,23 +139,20 @@ object OverlayHelper {
             removeOverlay(context)
         }
 
-        // Close overlay when tapping outside the card
         rootView?.setOnClickListener {
             Log.d(TAG, "Outside tap detected - returning null feedback")
             onFeedbackResult?.invoke(null)
             removeOverlay(context)
         }
 
-        // Prevent closing when tapping on the card itself
+
         layout.findViewById<View>(R.id.overlay_container)?.setOnClickListener {
             // Do nothing - consume the click
         }
 
         submitBtn?.setOnClickListener {
-            // Collect voice quality (1-5, null if not set)
             val voiceQuality = selectedRating
 
-            // Collect audio issues
             val audioIssues = mutableListOf<AudioIssue>()
             if (audioIssueDropped?.isChecked == true) audioIssues.add(AudioIssue.CALL_DROPPED)
             if (audioIssueHearOther?.isChecked == true) audioIssues.add(AudioIssue.COULD_NOT_HEAR_OTHER)
@@ -172,7 +160,6 @@ object OverlayHelper {
             if (audioIssueBackgroundNoise?.isChecked == true) audioIssues.add(AudioIssue.BACKGROUND_NOISE)
             if (audioIssueEcho?.isChecked == true) audioIssues.add(AudioIssue.ECHO)
 
-            // Collect environment (single selection)
             val environment = when {
                 envIndoor?.isChecked == true -> Environment.INDOOR
                 envOutdoor?.isChecked == true -> Environment.OUTDOOR

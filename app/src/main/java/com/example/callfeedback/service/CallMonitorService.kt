@@ -33,7 +33,6 @@ class CallMonitorService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "Service created")
 
         // Clear any leftover notifications
         val manager = getSystemService(NotificationManager::class.java)
@@ -67,13 +66,11 @@ class CallMonitorService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "Service started")
         return START_STICKY
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "Service destroyed")
         callStateObserver.stop()
         // Clean up notifications
         val manager = getSystemService(NotificationManager::class.java)
@@ -204,7 +201,7 @@ class CallMonitorService : Service() {
                             longitude = longitude,
                             timestamp = timestamp
                         )
-                        Log.d(TAG, "Received feedback from overlay: $feedbackWithMetadata")
+
                         submitFeedbackToRepository(feedbackWithMetadata)
                     } else {
 
@@ -230,7 +227,6 @@ class CallMonitorService : Service() {
                 notifyFeedbackAvailable()
             }
         } catch (@Suppress("UNUSED_PARAMETER") t: Throwable) {
-            Log.w(TAG, "Error showing feedback UI, submitting metadata-only feedback")
             val metadataOnlyFeedback = UserFeedback(
                 networkGeneration = networkGeneration,
                 signalStrength = signalStrength,
