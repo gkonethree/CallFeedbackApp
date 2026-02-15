@@ -19,6 +19,8 @@ import com.example.callfeedback.util.DeviceMetadataCollector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 
 class CallMonitorService : Service() {
 
@@ -30,34 +32,45 @@ class CallMonitorService : Service() {
 
     private lateinit var callStateObserver: CallStateObserver
     private var isForegroundNotificationShown = false
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private fun createMinimalNotification(): Notification {
+        ensureChannelExists(getSystemService(NotificationManager::class.java))
+
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Call monitor active")
+            .setContentText("Waiting for calls")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOngoing(true)
+            .build()
+    }
+
+    private fun updateToInCallNotification() {
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("In call")
+            .setContentText("Monitoring call quality")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOngoing(true)
+            .build()
+
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(NOTIFICATION_ID, notification)
+    }
+
 
     override fun onCreate() {
         super.onCreate()
 
-        // Clear any leftover notifications
-        val manager = getSystemService(NotificationManager::class.java)
-        manager?.cancel(NOTIFICATION_ID)
-        manager?.cancel(NOTIFICATION_ID + 1)
+        // MUST start foreground immediately
+        startForeground(NOTIFICATION_ID, createMinimalNotification())
 
         callStateObserver = CallStateObserver(
             context = this,
             onCallStart = {
-
-                if (!isForegroundNotificationShown) {
-                    startForeground(NOTIFICATION_ID, createInCallNotification())
-                    isForegroundNotificationShown = true
-                }
+                updateToInCallNotification()
             },
             onCallEnd = {
-
-                if (isForegroundNotificationShown) {
-                    stopForeground(STOP_FOREGROUND_REMOVE)
-                    isForegroundNotificationShown = false
-                } else {
-                    val mgr = getSystemService(NotificationManager::class.java)
-                    mgr?.cancel(NOTIFICATION_ID)
-                }
-
+                val manager = getSystemService(NotificationManager::class.java)
+                manager.notify(NOTIFICATION_ID, createMinimalNotification())
                 collectAndHandleCallEnd()
             }
         )
@@ -65,14 +78,19 @@ class CallMonitorService : Service() {
         callStateObserver.start()
     }
 
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if(!::callStateObserver.isInitialized){
+            callStateObserver.start()
+        }
         return START_STICKY
     }
 
     override fun onDestroy() {
         super.onDestroy()
         callStateObserver.stop()
-        // Clean up notifications
+        serviceScope.cancel()
+
         val manager = getSystemService(NotificationManager::class.java)
         manager?.cancel(NOTIFICATION_ID)
         manager?.cancel(NOTIFICATION_ID + 1)
@@ -155,7 +173,7 @@ class CallMonitorService : Service() {
     private fun submitFeedbackToRepository(feedback: UserFeedback) {
 
         val repository = FeedbackRepository()
-        CoroutineScope(Dispatchers.Main).launch {
+        serviceScope.launch {
             try {
                 val result = repository.submitFeedback(feedback)
 

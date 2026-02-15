@@ -76,6 +76,7 @@ class CallStateObserver(
         }
         // Reset observed state when stopping
         observedCallStart = false
+        wasInCall=false
     }
 
     private fun handleCallStateChanged(state: Int) {

@@ -21,10 +21,27 @@ import com.example.callfeedback.ui.overlay.OverlayHelper
 import com.example.callfeedback.ui.theme.CallFeedbackTheme
 import android.content.pm.PackageManager
 import android.util.Log
+import android.content.Context
+import android.net.Uri
+import android.os.PowerManager
+import android.provider.Settings
 
 class MainActivity : ComponentActivity() {
 
     private var overlayPermissionRequested = false
+    private fun isBatteryOptimizationDisabled(): Boolean {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        return powerManager.isIgnoringBatteryOptimizations(packageName)
+    }
+
+    private fun requestDisableBatteryOptimization() {
+        val intent = Intent(
+            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+        ).apply {
+            data = Uri.parse("package:$packageName")
+        }
+        startActivity(intent)
+    }
 
     private val requestPhonePermissionLauncher =
         registerForActivityResult(
@@ -64,6 +81,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         requestPhonePermission()
+        if (!isBatteryOptimizationDisabled()) {
+            requestDisableBatteryOptimization()
+        }
 
         setContent {
             CallFeedbackTheme {

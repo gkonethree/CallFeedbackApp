@@ -1,0 +1,65 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{hyperref}
+
+\title{\textbf{Daily Work Log}}
+\author{Gaurav Kumar \\
+Shiv Narang}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section*{Overview}
+This document records daily progress and tasks completed during the project.
+
+\vspace{0.5cm}
+
+\section*{Work Log}
+
+\begin{longtable}{|p{3cm}|p{12cm}|}
+\hline
+\textbf{Date} & \textbf{Work Done} \\
+\hline
+\endfirsthead
+
+\hline
+\textbf{Date} & \textbf{Work Done} \\
+\hline
+\endhead
+
+% ---- Entries start here ----
+
+Till Jan End &
+Studied previous report and set up the project using Kotlin language for frontend and python for backend. We are using the Android Studio IDE. \\
+\hline
+
+First Week of Feb &
+Created a basic clean UI and and integrated the backend. The feedback form currently captures user ratings and some device statistics \\
+\hline
+
+10 Feb 2026 &
+Created the design document and worklog for the project. Tested on some incoming and outgoing call cases.  \\
+\hline
+
+12 Feb 2026 &
+Researched on the problem of app getting killed by android and not being able to detect calls made after a long time. \\
+\hline
+
+13 Feb 2026 &
+Decided to use app as a foreground process with a persistent notification indicating it is waiting for call. Implementing this feature. \\
+\hline
+
+14 Feb 2026 &
+Completed implementation and testing of the foreground feature.\\
+\hline
+
+% ---- Add more entries as needed ----
+
+\end{longtable}
+
+\end{document}
