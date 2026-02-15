@@ -1,5 +1,5 @@
 \documentclass{article}
-\usepackage{graphicx} % Required for inserting images
+\usepackage{graphicx} 
 
 \title{CallFeedbackApp Design Doc}
 \author{Gaurav Kumar \\ Shiv Narang}
@@ -19,6 +19,9 @@ The system follows a client--server architecture:
 \end{itemize}
 
 The design emphasizes minimal user interaction, low overhead during calls, and reliable metadata collection.
+
+
+
 
 \section{User Interface Design}
 The mobile application provides an overlay-based feedback interface that appears after a call ends. The UI is designed to be minimal, non-intrusive, and easily dismissible.
@@ -72,7 +75,50 @@ Alongside user input, the client automatically collects device and network metad
     \item Timestamp of feedback submission.
 \end{itemize}
 
-This data is collected transparently without additional user interaction.
+This data is collected without additional user interaction.
+
+\section{App as a foreground service}
+
+\subsection{Background Execution Constraints in Android}
+
+Modern Android versions (Android 8.0 and above) impose strict limitations on background execution in order to improve battery life and system stability. Applications running in the background may be:
+
+\begin{itemize}
+    \item Stopped due to memory pressure,
+    \item Restricted from receiving broadcasts,
+    \item Prevented from executing long-running background tasks.
+\end{itemize}
+
+In the context of this application, which continuously monitors cellular call state events, background execution restrictions can interrupt call detection and feedback collection. Therefore, we design the app to be a foreground service with persistent notification.
+
+\subsection{Persistent Notification Requirement}
+
+Android enforces that every foreground service must display a non-dismissible notification.
+
+In this application, the notification indicates:
+
+\begin{itemize}
+    \item ``Call monitor active'' when idle,
+    \item ``Monitoring call quality'' during an active call.
+\end{itemize}
+
+Instead of stopping the foreground service after each call, the notification is updated dynamically. 
+
+\subsection{System Stability Considerations}
+
+If a service is started using \texttt{startForegroundService()}, Android requires that \texttt{startForeground()} be invoked within five seconds. Failure to do so results in a \texttt{ForegroundServiceDidNotStartInTimeException}, causing application crashes and system-level instability warnings.
+
+To comply with this requirement, the application:
+
+\begin{itemize}
+    \item Immediately starts in foreground mode upon creation,
+    \item Maintains a minimal persistent notification,
+    \item Updates the notification during call state transitions,
+    \item Avoids unnecessary stopping and restarting of the service.
+\end{itemize}
+
+Although it introduces a persistent notification, this approach guarantees correctness, reliability.
+
 
 \section{Backend Design}
 
@@ -134,15 +180,5 @@ The system is designed with privacy in mind:
 
 User participation is voluntary, and feedback submission does not block normal phone usage.
 
-\section{Design Rationale}
-
-The combined UI and backend design prioritizes:
-\begin{itemize}
-    \item Low user effort and minimal disruption.
-    \item Accurate correlation between perceived quality and network conditions.
-    \item Extensibility for future metrics and analytics.
-\end{itemize}
-
-This design makes the system suitable for large-scale network performance research and real-world deployment.
 
 \end{document}
