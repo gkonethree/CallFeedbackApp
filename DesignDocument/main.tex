@@ -24,7 +24,7 @@ The design emphasizes minimal user interaction, low overhead during calls, and r
 
 
 \section{User Interface Design}
-The mobile application provides an overlay-based feedback interface that appears after a call ends. The UI is designed to be minimal, non-intrusive, and easily dismissible.
+The mobile application provides an overlay-based feedback interface that appears after a call ends. The UI is designed to be minimal and easily dismissible.
 
 \begin{figure}[h]
     \centering
@@ -35,7 +35,7 @@ The mobile application provides an overlay-based feedback interface that appears
 \end{figure}
 
 \subsection{User Interface Flow}
-The Android application continuously listens to telephony call state changes using the \texttt{TelephonyManager} API. When a transition from \texttt{CALL\_STATE\_OFFHOOK} to \texttt{CALL\_STATE\_IDLE} is detected, the system infers that a call has ended and triggers the feedback flow.
+The Android application registers a call state listener with the \texttt{TelephonyManager} API, allowing the Android telephony framework to asynchronously notify the application whenever a call state change occurs. When a transition from \\ \texttt{CALL\_STATE\_OFFHOOK} to \texttt{CALL\_STATE\_IDLE} is detected, the system infers that a call has ended and triggers the feedback flow.
 
 This event-driven approach ensures that the feedback UI is displayed only after the call is completed, avoiding user interruption during the call.
 
@@ -75,7 +75,78 @@ Alongside user input, the client automatically collects device and network metad
     \item Timestamp of feedback submission.
 \end{itemize}
 
-This data is collected without additional user interaction.
+This data is collected without additional user interaction.\\
+Checking if Wi-Fi calling is enabled is not permitted by Android because Wi-Fi calling is treated as carrier-managed telephony, not app-level networking.
+
+
+\section{APIs Used}
+
+This section describes the Android platform APIs used to collect network, radio, and contextual metadata for post-call analysis.
+
+\subsection{TelephonyManager}
+
+The \texttt{TelephonyManager} API provides access to cellular network and radio-related information. It is used to determine the current cellular network type and signal strength.
+
+\subsubsection{Call State Detection}
+
+Call state detection is performed using the \texttt{TelephonyManager} API to monitor changes in the device's telephony call state. The Android system reports call state transitions via a listener mechanism, allowing applications to react to call lifecycle events in real time.
+
+The primary call states are represented by integer constants defined in \texttt{TelephonyManager}:
+\begin{itemize}
+    \item \texttt{CALL\_STATE\_IDLE}: Indicates that the device is not currently involved in a call.
+    \item \texttt{CALL\_STATE\_RINGING}: Indicates an incoming call is ringing.
+    \item \texttt{CALL\_STATE\_OFFHOOK}: Indicates that a call is active, including outgoing calls or answered incoming calls.
+\end{itemize}
+
+Call state updates are received by registering a \texttt{PhoneStateListener}(or \texttt{CallStateListener} for newer versions) and overriding the \texttt{onCallStateChanged()} callback. Transitions between these states allow the application to infer call start and call end events. Specifically, a transition to \texttt{CALL\_STATE\_OFFHOOK} is interpreted as the start of a call, while a transition back to \texttt{CALL\_STATE\_IDLE} signifies the termination of a call.
+
+
+% Although \texttt{PhoneStateListener} is marked as deprecated in newer Android versions, it remains the most reliable and widely supported approach for call state monitoring across a broad range of devices and API levels.
+
+
+\subsubsection{Network Type Detection}
+
+The API method \texttt{getDataNetworkType()} returns an integer constant representing the current radio access technology. These values are mapped to high-level network generations as follows:
+
+\begin{itemize}
+    \item \textbf{2G}: GPRS, EDGE, CDMA, 1xRTT, IDEN
+    \item \textbf{3G}: UMTS, HSDPA, HSUPA, HSPA, EVDO variants
+    \item \textbf{4G/LTE}: LTE
+    \item \textbf{5G/NR}: NR
+\end{itemize}
+
+
+\subsubsection{Signal Strength Estimation}
+
+The \texttt{allCellInfo} API is used to retrieve a list of available cell information objects. Depending on the radio technology, the signal strength is extracted from the corresponding classes:
+
+\begin{itemize}
+    \item \texttt{CellInfoGsm}
+    \item \texttt{CellInfoWcdma}
+    \item \texttt{CellInfoLte}
+    \item \texttt{CellInfoNr} (Android 12+)
+\end{itemize}
+
+The received signal strength indicator , expressed in dBm, is extracted from the \texttt{CellSignalStrength} object. Invalid or unavailable values are filtered before use.
+
+\subsection{ConnectivityManager}
+
+The \texttt{ConnectivityManager} API is used to determine the currently active network transport.
+
+Using \texttt{getActiveNetwork()} and \texttt{getNetworkCapabilities()}, the application identifies whether the device is connected via:
+
+\begin{itemize}
+    \item \textbf{Wi-Fi} (\texttt{TRANSPORT\_WIFI})
+    \item \textbf{Cellular} (\texttt{TRANSPORT\_CELLULAR})
+\end{itemize}
+
+
+\subsection{FusedLocationProviderClient}
+
+The \texttt{FusedLocationProviderClient} API from Google Play Services is used to obtain the device’s approximate geographical location at the time of feedback submission.
+
+The method \texttt{getCurrentLocation()} is invoked with \texttt{PRIORITY\_BALANCED\_POWER\_ACCURACY}, which provides a coarse location estimate while minimizing battery consumption. Location access is performed only when the appropriate runtime permissions are granted.
+
 
 \section{App as a foreground service}
 
@@ -175,7 +246,7 @@ The system is designed with privacy in mind:
 \begin{itemize}
     \item No call audio or phone numbers are recorded.
     \item Location data is collected only when permission is granted.
-    \item All communication occurs over secure HTTP (HTTPS).
+
 \end{itemize}
 
 User participation is voluntary, and feedback submission does not block normal phone usage.
