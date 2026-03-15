@@ -23,8 +23,7 @@ class UserFeedback(BaseModel):
     audioIssues: Optional[List[AudioIssueEnum]] = Field(None, description="List of audio issues")
     environment: Optional[EnvironmentEnum] = Field(None, description="Environment type")
     comment: Optional[str] = Field(None, description="User comments")
-
-    # Device metadata fields
+    carrier: Optional[str] = Field(None, description="Mobile carrier")
     networkGeneration: Optional[str] = Field(None, description="Network type: WiFi, 2G, 3G, 4G, 5G")
     signalStrength: Optional[int] = Field(None, description="Signal strength in dBm")
     latitude: Optional[float] = Field(None, description="Device latitude")

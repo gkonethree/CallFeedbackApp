@@ -1,0 +1,7 @@
+.venv/
+fastapi/.env
+__pycache__/
+.env
+.DS_Store
+*.log
+api-key.py

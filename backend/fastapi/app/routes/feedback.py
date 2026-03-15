@@ -1,11 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends, Header
-from app.models.schemas import UserFeedback, FeedbackInDB, FeedbackListResponse
+from fastapi import APIRouter, Depends
+from app.models.schemas import UserFeedback, FeedbackInDB
 from app.db import get_feedback_collection
-from app.config import settings
-from typing import Optional
+from app.auth import verify_api_key
 from datetime import datetime
-from bson import ObjectId
-import uuid
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 
@@ -17,6 +14,7 @@ def serialize(doc: dict) -> dict:
         "audioIssues": doc.get("audioIssues"),
         "environment": doc.get("environment"),
         "comment": doc.get("comment"),
+        "carrier": doc.get("carrier"),
         "networkGeneration": doc.get("networkGeneration"),
         "signalStrength": doc.get("signalStrength"),
         "latitude": doc.get("latitude"),
@@ -27,7 +25,7 @@ def serialize(doc: dict) -> dict:
 
 
 @router.post("", response_model=FeedbackInDB, status_code=201)
-async def create_feedback(payload: UserFeedback):
+async def create_feedback(payload: UserFeedback,api_key: str = Depends(verify_api_key)):
     col = get_feedback_collection()
 
     doc = {
@@ -35,6 +33,7 @@ async def create_feedback(payload: UserFeedback):
         "audioIssues": [issue.value for issue in payload.audioIssues] if payload.audioIssues else None,
         "environment": payload.environment.value if payload.environment else None,
         "comment": payload.comment,
+        "carrier": payload.carrier,
         "networkGeneration": payload.networkGeneration,
         "signalStrength": payload.signalStrength,
         "latitude": payload.latitude,
@@ -45,8 +44,8 @@ async def create_feedback(payload: UserFeedback):
     now = datetime.utcnow()
     doc["created_at"] = now
     
-    res = await col.insert_one(doc)
-    created = await col.find_one({"_id": res.inserted_id})
+    res =  await col.insert_one(doc)
+    created =  await col.find_one({"_id": res.inserted_id})
     return serialize(created)
 
 
