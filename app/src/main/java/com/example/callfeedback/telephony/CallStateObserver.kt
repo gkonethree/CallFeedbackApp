@@ -98,7 +98,7 @@ class CallStateObserver(
                 if (wasInCall) {
                     wasInCall = false
                     if (observedCallStart) {
-                        // Only emit call end for calls we observed the start of
+
                         observedCallStart = false
                         Log.d(TAG, "Call ended (observed)")
                         onCallEnd()

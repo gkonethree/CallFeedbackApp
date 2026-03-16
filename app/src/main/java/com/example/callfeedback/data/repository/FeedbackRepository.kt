@@ -1,5 +1,5 @@
 package com.example.callfeedback.data.repository
-
+import com.example.callfeedback.BuildConfig
 import android.util.Log
 import com.example.callfeedback.data.api.ApiClient
 import com.example.callfeedback.data.model.UserFeedback
@@ -25,7 +25,7 @@ class FeedbackRepository {
 
     suspend fun submitFeedback(feedback: UserFeedback): Result<Unit> = try {
         retry {
-            ApiClient.feedbackApi.submitFeedback(feedback)
+            ApiClient.feedbackApi.submitFeedback(BuildConfig.API_KEY,feedback)
         }
         Result.success(Unit)
     } catch (e: Exception) {

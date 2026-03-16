@@ -60,7 +60,6 @@ class CallMonitorService : Service() {
     override fun onCreate() {
         super.onCreate()
 
-        // MUST start foreground immediately
         startForeground(NOTIFICATION_ID, createMinimalNotification())
 
         callStateObserver = CallStateObserver(
@@ -114,28 +113,6 @@ class CallMonitorService : Service() {
             manager.createNotificationChannel(channel)
         }
 
-    }
-
-    private fun createInCallNotification(): Notification {
-        val manager = getSystemService(NotificationManager::class.java)
-        ensureChannelExists(manager)
-
-        val feedbackIntent = Intent(this, FeedbackActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-
-        val pendingIntentFlags =
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-
-        val pendingIntent = PendingIntent.getActivity(this, 0, feedbackIntent, pendingIntentFlags)
-
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("In call")
-            .setContentText("Tap to open feedback after call")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .build()
     }
 
     private fun notifyFeedbackAvailable() {
@@ -193,13 +170,15 @@ class CallMonitorService : Service() {
         val networkGeneration = metadataCollector.getNetworkGeneration()
         val signalStrength = metadataCollector.getSignalStrength()
         val timestamp = metadataCollector.getTimestamp()
+        val carrier=metadataCollector.getCarrier()
 
         metadataCollector.getLocation { latitude, longitude ->
-            showFeedbackUI(networkGeneration, signalStrength, latitude, longitude, timestamp)
+            showFeedbackUI(carrier,networkGeneration, signalStrength, latitude, longitude, timestamp)
         }
     }
 
     private fun showFeedbackUI(
+        carrier: String?,
         networkGeneration: String,
         signalStrength: Int?,
         latitude: Double?,
@@ -213,6 +192,7 @@ class CallMonitorService : Service() {
                 OverlayHelper.showOverlay(this) { feedback ->
                     if (feedback != null) {
                         val feedbackWithMetadata = feedback.copy(
+                            carrier= carrier,
                             networkGeneration = networkGeneration,
                             signalStrength = signalStrength,
                             latitude = latitude,
@@ -224,6 +204,7 @@ class CallMonitorService : Service() {
                     } else {
 
                         val metadataOnlyFeedback = UserFeedback(
+                            carrier=carrier,
                             networkGeneration = networkGeneration,
                             signalStrength = signalStrength,
                             latitude = latitude,
@@ -235,6 +216,7 @@ class CallMonitorService : Service() {
                 }
             } else {
                 val metadataOnlyFeedback = UserFeedback(
+                    carrier=carrier,
                     networkGeneration = networkGeneration,
                     signalStrength = signalStrength,
                     latitude = latitude,
@@ -246,6 +228,7 @@ class CallMonitorService : Service() {
             }
         } catch (@Suppress("UNUSED_PARAMETER") t: Throwable) {
             val metadataOnlyFeedback = UserFeedback(
+                carrier=carrier,
                 networkGeneration = networkGeneration,
                 signalStrength = signalStrength,
                 latitude = latitude,

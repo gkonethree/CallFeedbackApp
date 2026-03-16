@@ -9,6 +9,7 @@ data class UserFeedback(
     val environment: Environment? = null,
     val comment: String? = null,
     // Network & Device metadata
+    val carrier: String? = null,
     val networkGeneration: String? = null,  // WiFi, 2G, 3G, 4G, 5G, etc.
     val signalStrength: Int? = null,        // Signal strength in dBm
     val latitude: Double? = null,           // Latitude of the device

@@ -89,7 +89,7 @@ class DeviceMetadataCollector(private val context: Context) {
                 TelephonyManager.NETWORK_TYPE_EHRPD,
                 TelephonyManager.NETWORK_TYPE_HSPAP -> "3G"
 
-                TelephonyManager.NETWORK_TYPE_LTE -> "4G/LTE"
+                TelephonyManager.NETWORK_TYPE_LTE -> "LTE"
 
                 TelephonyManager.NETWORK_TYPE_NR -> "5G/NR"
 
@@ -204,6 +204,10 @@ class DeviceMetadataCollector(private val context: Context) {
         }
     }
 
+    fun getCarrier(): String?{
+        val telephonyManager=context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        return telephonyManager.networkOperatorName
+    }
     fun getTimestamp(): Long {
         return System.currentTimeMillis()
     }
