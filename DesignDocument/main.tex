@@ -20,7 +20,8 @@ The system follows a client--server architecture:
 
 The design emphasizes minimal user interaction, low overhead during calls, and reliable metadata collection.
 
-
+\subsection{Authentication}
+Currently authentication is handled by an API key. The app sends the API key in header along with other data. Backend then verifies the API key and accepts request only if it matches.
 
 
 \section{User Interface Design}
@@ -69,6 +70,7 @@ All input fields are optional to minimize friction and prevent feedback abandonm
 
 Alongside user input, the client automatically collects device and network metadata at the time of feedback submission, including:
 \begin{itemize}
+    \item Carrier Name
     \item Network type (WiFi, 2G, 3G, 4G, 5G).
     \item Signal strength in dBm.
     \item Approximate geographic location (if permission is granted).
@@ -235,10 +237,6 @@ The backend enforces the following constraints:
 \end{itemize}
 
 This ensures high-quality data suitable for downstream analysis.
-
-\subsection{Storage and Retrieval}
-
-Each feedback record is stored with a unique identifier and server-generated timestamp. Feedback retrieval supports pagination to efficiently handle large datasets, enabling scalable analytics and visualization.
 
 \subsection{Security and Privacy Considerations}
 
