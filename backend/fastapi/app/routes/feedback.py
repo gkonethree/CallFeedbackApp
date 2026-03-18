@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from app.models.schemas import UserFeedback, FeedbackInDB
 from app.db import get_feedback_collection
-from app.auth import verify_api_key
-from datetime import datetime
+from app.auth import verify_api_key, verify_read_api_key
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 
@@ -25,7 +25,7 @@ def serialize(doc: dict) -> dict:
 
 
 @router.post("", response_model=FeedbackInDB, status_code=201)
-async def create_feedback(payload: UserFeedback,api_key: str = Depends(verify_api_key)):
+async def create_feedback(payload: UserFeedback, api_key: str = Depends(verify_api_key)):
     col = get_feedback_collection()
 
     doc = {
@@ -41,68 +41,27 @@ async def create_feedback(payload: UserFeedback,api_key: str = Depends(verify_ap
         "timestamp": payload.timestamp,
     }
 
-    now = datetime.utcnow()
-    doc["created_at"] = now
-    
-    res =  await col.insert_one(doc)
-    created =  await col.find_one({"_id": res.inserted_id})
-    return serialize(created)
+    doc = {k: v for k, v in doc.items() if v is not None}
 
+    doc["created_at"] = datetime.now(timezone.utc)
 
-# @router.get("", response_model=FeedbackListResponse)
-# async def list_feedback(
-#     page: int = 1,
-#     size: int = 20,
-#     min_quality: Optional[int] = None,
-#     max_quality: Optional[int] = None,
-#     network: Optional[str] = None,
-# ):
-#     col = get_feedback_collection()
-#     skip = (page - 1) * size
-#     query = {}
+    res = await col.insert_one(doc)
+    doc["_id"] = res.inserted_id
 
-#     # Filter by voice quality
-#     if min_quality is not None or max_quality is not None:
-#         quality_query = {}
-#         if min_quality is not None:
-#             quality_query["$gte"] = min_quality
-#         if max_quality is not None:
-#             quality_query["$lte"] = max_quality
-#         query["voiceQuality"] = quality_query
+    return serialize(doc)
 
-#     # Filter by network type
-#     if network:
-#         query["networkGeneration"] = network
+@router.get("", response_model=list[FeedbackInDB])
+async def get_all_feedbacks(
+    skip: int = 0,
+    limit: int = 50,
+    api_key: str = Depends(verify_read_api_key)
+):
+    col = get_feedback_collection()
 
-#     total = await col.count_documents(query)
-#     cursor = col.find(query).sort("created_at", -1).skip(skip).limit(size)
-#     items = [serialize(d) async for d in cursor]
-#     return {"items": items, "total": total, "page": page, "size": size}
+    docs = await col.find()\
+        .sort("created_at", -1)\
+        .skip(skip)\
+        .limit(limit)\
+        .to_list(length=limit)
 
-
-# @router.get("/{id}", response_model=FeedbackInDB)
-# async def get_feedback(id: str):
-#     col = get_feedback_collection()
-#     try:
-#         oid = ObjectId(id)
-#     except Exception:
-#         raise HTTPException(status_code=404, detail="Not found")
-#     doc = await col.find_one({"_id": oid})
-#     if not doc:
-#         raise HTTPException(status_code=404, detail="Not found")
-#     return serialize(doc)
-
-
-# @router.delete("/{id}")
-# async def delete_feedback(id: str, x_api_key: Optional[str] = Header(None)):
-#     if x_api_key != settings.ADMIN_API_KEY:
-#         raise HTTPException(status_code=403, detail="Forbidden")
-#     col = get_feedback_collection()
-#     try:
-#         oid = ObjectId(id)
-#     except Exception:
-#         raise HTTPException(status_code=404, detail="Not found")
-#     res = await col.delete_one({"_id": oid})
-#     if res.deleted_count == 0:
-#         raise HTTPException(status_code=404, detail="Not found")
-#     return {"ok": True}
+    return [serialize(doc) for doc in docs]

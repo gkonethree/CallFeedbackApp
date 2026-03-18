@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 
 class AudioIssueEnum(str, Enum):
-    """Audio issues reported by user"""
+    CALL_PERFECT= "CALL_PERFECT"
     CALL_DROPPED = "CALL_DROPPED"
     COULD_NOT_HEAR_OTHER = "COULD_NOT_HEAR_OTHER"
     OTHER_COULD_NOT_HEAR_ME = "OTHER_COULD_NOT_HEAR_ME"
@@ -12,7 +12,6 @@ class AudioIssueEnum(str, Enum):
     ECHO = "ECHO"
 
 class EnvironmentEnum(str, Enum):
-    """Environment where call was made"""
     INDOOR = "INDOOR"
     OUTDOOR = "OUTDOOR"
     IN_VEHICLE = "IN_VEHICLE"
@@ -31,16 +30,11 @@ class UserFeedback(BaseModel):
     timestamp: Optional[int] = Field(None, description="Unix timestamp in milliseconds")
 
 class FeedbackInDB(UserFeedback):
-    """Feedback stored in database"""
     id: str
     created_at: datetime
 
 class FeedbackListResponse(BaseModel):
-    """List of feedbacks response"""
     items: List[FeedbackInDB]
     total: int
     page: int
     size: int
-
-
-
