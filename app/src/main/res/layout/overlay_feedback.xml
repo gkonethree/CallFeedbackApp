@@ -7,7 +7,6 @@
     android:background="#66000000"
     android:clickable="true">
 
-    <!-- Centered main container -->
     <LinearLayout
         android:id="@+id/overlay_container"
         android:layout_width="320dp"
@@ -22,7 +21,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header with Title and Close Button in same row -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -30,7 +29,7 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Title -->
+
             <TextView
                 android:id="@+id/overlay_title"
                 android:layout_width="0dp"
@@ -52,7 +51,6 @@
                 android:src="@android:drawable/ic_menu_close_clear_cancel" />
         </LinearLayout>
 
-        <!-- Main scrollable content (Voice Quality, Audio Issues, Environment) -->
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -65,7 +63,6 @@
                 android:orientation="vertical">
 
 
-                <!-- Voice Quality Rating -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -81,14 +78,13 @@
                         android:textSize="14sp"
                         android:textStyle="bold" />
 
-                    <!-- Discrete Star Rating -->
+
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical">
 
-                        <!-- Star 1 -->
                         <ImageButton
                             android:id="@+id/star_1"
                             android:layout_width="40dp"
@@ -101,7 +97,6 @@
                             android:scaleType="centerInside"
                             android:tag="1" />
 
-                        <!-- Star 2 -->
                         <ImageButton
                             android:id="@+id/star_2"
                             android:layout_width="40dp"
@@ -114,7 +109,6 @@
                             android:scaleType="centerInside"
                             android:tag="2" />
 
-                        <!-- Star 3 -->
                         <ImageButton
                             android:id="@+id/star_3"
                             android:layout_width="40dp"
@@ -127,7 +121,6 @@
                             android:scaleType="centerInside"
                             android:tag="3" />
 
-                        <!-- Star 4 -->
                         <ImageButton
                             android:id="@+id/star_4"
                             android:layout_width="40dp"
@@ -140,7 +133,6 @@
                             android:scaleType="centerInside"
                             android:tag="4" />
 
-                        <!-- Star 5 -->
                         <ImageButton
                             android:id="@+id/star_5"
                             android:layout_width="40dp"
@@ -154,7 +146,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Specific Audio Issues -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -165,25 +157,41 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
-                        android:text="Audio Issues (Select all that apply)"
+                        android:text="(Select all that apply)"
                         android:textColor="#000000"
                         android:textSize="14sp"
                         android:textStyle="bold" />
 
-                    <!-- Tags container in rows -->
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="start"
                         android:orientation="vertical">
 
-                        <!-- Row 1: Call was dropped, Could not hear other -->
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="10dp"
                             android:orientation="horizontal"
                             android:weightSum="2">
+
+                            <ToggleButton
+                                android:id="@+id/audio_perfect"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_marginStart="6dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/tag_selector2"
+                                android:gravity="center"
+                                android:padding="0dp"
+                                android:textColor="#000000"
+                                android:textOff="Perfect call"
+                                android:textOn="Perfect call"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
 
                             <ToggleButton
                                 android:id="@+id/audio_issue_dropped"
@@ -200,11 +208,21 @@
                                 android:textSize="11sp"
                                 android:textStyle="bold" />
 
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="10dp"
+                            android:orientation="horizontal"
+                            android:weightSum="2">
                             <ToggleButton
                                 android:id="@+id/audio_issue_hear_other"
                                 android:layout_width="0dp"
                                 android:layout_height="40dp"
                                 android:layout_marginStart="6dp"
+                                android:layout_marginEnd="4dp"
                                 android:layout_weight="1"
                                 android:background="@drawable/tag_selector"
                                 android:gravity="center"
@@ -214,16 +232,6 @@
                                 android:textOn="Can't hear them"
                                 android:textSize="11sp"
                                 android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <!-- Row 2: Other could not hear me, Background noise -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="10dp"
-                            android:orientation="horizontal"
-                            android:weightSum="2">
-
                             <ToggleButton
                                 android:id="@+id/audio_issue_hear_me"
                                 android:layout_width="0dp"
@@ -239,11 +247,22 @@
                                 android:textSize="11sp"
                                 android:textStyle="bold" />
 
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="10dp"
+                            android:orientation="horizontal"
+                            android:weightSum="2">
+
                             <ToggleButton
                                 android:id="@+id/audio_issue_background_noise"
                                 android:layout_width="0dp"
                                 android:layout_height="40dp"
                                 android:layout_marginStart="6dp"
+                                android:layout_marginEnd="4dp"
                                 android:layout_weight="1"
                                 android:background="@drawable/tag_selector"
                                 android:gravity="center"
@@ -253,18 +272,13 @@
                                 android:textOn="Background noise"
                                 android:textSize="11sp"
                                 android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <!-- Row 3: Echo -->
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
 
                             <ToggleButton
                                 android:id="@+id/audio_issue_echo"
-                                android:layout_width="120dp"
+                                android:layout_width="0dp"
                                 android:layout_height="40dp"
+                                android:layout_marginEnd="6dp"
+                                android:layout_weight="1"
                                 android:background="@drawable/tag_selector"
                                 android:gravity="center"
                                 android:padding="0dp"

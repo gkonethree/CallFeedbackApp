@@ -68,9 +68,10 @@ class CallMonitorService : Service() {
                 updateToInCallNotification()
             },
             onCallEnd = {
+                callDuration:Long ->
                 val manager = getSystemService(NotificationManager::class.java)
                 manager.notify(NOTIFICATION_ID, createMinimalNotification())
-                collectAndHandleCallEnd()
+                collectAndHandleCallEnd(callDuration)
             }
         )
 
@@ -115,29 +116,29 @@ class CallMonitorService : Service() {
 
     }
 
-    private fun notifyFeedbackAvailable() {
-        val manager = getSystemService(NotificationManager::class.java)
-        ensureChannelExists(manager)
-
-        val feedbackIntent = Intent(this, FeedbackActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-
-        val pendingIntentFlags =
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-
-        val pendingIntent = PendingIntent.getActivity(this, 0, feedbackIntent, pendingIntentFlags)
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Share call feedback")
-            .setContentText("Tap to provide feedback about your recent call")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
-
-        manager?.notify(NOTIFICATION_ID + 1, notification)
-    }
+//    private fun notifyFeedbackAvailable() {
+//        val manager = getSystemService(NotificationManager::class.java)
+//        ensureChannelExists(manager)
+//
+//        val feedbackIntent = Intent(this, FeedbackActivity::class.java).apply {
+//            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+//        }
+//
+//        val pendingIntentFlags =
+//            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+//
+//        val pendingIntent = PendingIntent.getActivity(this, 0, feedbackIntent, pendingIntentFlags)
+//
+//        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+//            .setContentTitle("Share call feedback")
+//            .setContentText("Tap to provide feedback about your recent call")
+//            .setSmallIcon(R.drawable.ic_launcher_foreground)
+//            .setContentIntent(pendingIntent)
+//            .setAutoCancel(true)
+//            .build()
+//
+//        manager?.notify(NOTIFICATION_ID + 1, notification)
+//    }
 
     @Suppress("unused")
     private fun launchFeedbackScreen() {
@@ -165,7 +166,7 @@ class CallMonitorService : Service() {
         }
     }
 
-    private fun collectAndHandleCallEnd() {
+    private fun collectAndHandleCallEnd(callDuration:Long) {
         val metadataCollector = DeviceMetadataCollector(this)
         val networkGeneration = metadataCollector.getNetworkGeneration()
         val signalStrength = metadataCollector.getSignalStrength()
@@ -173,7 +174,7 @@ class CallMonitorService : Service() {
         val carrier=metadataCollector.getCarrier()
 
         metadataCollector.getLocation { latitude, longitude ->
-            showFeedbackUI(carrier,networkGeneration, signalStrength, latitude, longitude, timestamp)
+            showFeedbackUI(carrier,networkGeneration, signalStrength, latitude, longitude, timestamp,callDuration)
         }
     }
 
@@ -183,60 +184,43 @@ class CallMonitorService : Service() {
         signalStrength: Int?,
         latitude: Double?,
         longitude: Double?,
-        timestamp: Long
+        timestamp: Long?,
+        callDuration: Long?
     ) {
+
+        val baseFeedback = UserFeedback(
+            carrier = carrier,
+            networkGeneration = networkGeneration,
+            signalStrength = signalStrength,
+            latitude = latitude,
+            longitude = longitude,
+            timestamp = timestamp,
+            callDuration = callDuration
+        )
+
         try {
-            val overlayAllowed = OverlayHelper.canDrawOverlays(this)
-            if (overlayAllowed) {
+            if (!OverlayHelper.canDrawOverlays(this)) {
+                submitFeedbackToRepository(baseFeedback)
+                return
+            }
 
-                OverlayHelper.showOverlay(this) { feedback ->
-                    if (feedback != null) {
-                        val feedbackWithMetadata = feedback.copy(
-                            carrier= carrier,
-                            networkGeneration = networkGeneration,
-                            signalStrength = signalStrength,
-                            latitude = latitude,
-                            longitude = longitude,
-                            timestamp = timestamp
-                        )
+            OverlayHelper.showOverlay(this) { feedback ->
 
-                        submitFeedbackToRepository(feedbackWithMetadata)
-                    } else {
-
-                        val metadataOnlyFeedback = UserFeedback(
-                            carrier=carrier,
-                            networkGeneration = networkGeneration,
-                            signalStrength = signalStrength,
-                            latitude = latitude,
-                            longitude = longitude,
-                            timestamp = timestamp
-                        )
-                        submitFeedbackToRepository(metadataOnlyFeedback)
-                    }
-                }
-            } else {
-                val metadataOnlyFeedback = UserFeedback(
-                    carrier=carrier,
+                val finalFeedback = feedback?.copy(
+                    carrier = carrier,
                     networkGeneration = networkGeneration,
                     signalStrength = signalStrength,
                     latitude = latitude,
                     longitude = longitude,
-                    timestamp = timestamp
-                )
-                submitFeedbackToRepository(metadataOnlyFeedback)
-                notifyFeedbackAvailable()
+                    timestamp = timestamp,
+                    callDuration = callDuration
+                ) ?: baseFeedback
+
+                submitFeedbackToRepository(finalFeedback)
             }
-        } catch (@Suppress("UNUSED_PARAMETER") t: Throwable) {
-            val metadataOnlyFeedback = UserFeedback(
-                carrier=carrier,
-                networkGeneration = networkGeneration,
-                signalStrength = signalStrength,
-                latitude = latitude,
-                longitude = longitude,
-                timestamp = timestamp
-            )
-            submitFeedbackToRepository(metadataOnlyFeedback)
-            notifyFeedbackAvailable()
+
+        } catch (t: Throwable) {
+            submitFeedbackToRepository(baseFeedback)
         }
     }
 }

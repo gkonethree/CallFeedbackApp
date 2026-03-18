@@ -38,17 +38,6 @@
             android:foregroundServiceType="phoneCall"
             android:exported="false" />
 
-        <receiver
-            android:name=".telephony.PhoneStateReceiver"
-            android:exported="true"
-            android:permission="android.permission.READ_PHONE_STATE">
-
-            <intent-filter>
-                <action android:name="android.intent.action.PHONE_STATE"/>
-            </intent-filter>
-
-        </receiver>
-
         <activity
             android:name=".MainActivity"
             android:exported="true"

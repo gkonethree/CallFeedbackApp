@@ -24,14 +24,10 @@ import com.example.callfeedback.data.model.Environment
 import com.example.callfeedback.data.model.UserFeedback
 import java.lang.ref.WeakReference
 
-
 object OverlayHelper {
-
     private const val TAG = "OverlayHelper"
-
     @SuppressLint("StaticFieldLeak")
     private var overlayViewRef: WeakReference<View?> = WeakReference(null)
-
     private var overlayView: View?
         get() = overlayViewRef.get()
         set(value) { overlayViewRef = WeakReference(value) }
@@ -62,10 +58,8 @@ object OverlayHelper {
         }
 
         val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-
         val themedContext = ContextThemeWrapper(context, R.style.Theme_CallFeedback)
         val inflater = LayoutInflater.from(themedContext)
-
         val layout = inflater.inflate(R.layout.overlay_feedback, null)
 
         val stars = listOf(
@@ -95,13 +89,14 @@ object OverlayHelper {
             }
         }
 
+        val audioPerfect = layout.findViewById<ToggleButton>(R.id.audio_perfect)
         val audioIssueDropped = layout.findViewById<ToggleButton>(R.id.audio_issue_dropped)
         val audioIssueHearOther = layout.findViewById<ToggleButton>(R.id.audio_issue_hear_other)
         val audioIssueHearMe = layout.findViewById<ToggleButton>(R.id.audio_issue_hear_me)
         val audioIssueBackgroundNoise = layout.findViewById<ToggleButton>(R.id.audio_issue_background_noise)
         val audioIssueEcho = layout.findViewById<ToggleButton>(R.id.audio_issue_echo)
 
-        val audioButtons = listOf(audioIssueDropped, audioIssueHearOther, audioIssueHearMe, audioIssueBackgroundNoise, audioIssueEcho)
+        val audioButtons = listOf(audioPerfect,audioIssueDropped, audioIssueHearOther, audioIssueHearMe, audioIssueBackgroundNoise, audioIssueEcho)
         audioButtons.forEach { button ->
             button?.setOnCheckedChangeListener { _, isChecked ->
                 button.setTextColor(if (isChecked) android.graphics.Color.WHITE else android.graphics.Color.BLACK)
@@ -154,6 +149,7 @@ object OverlayHelper {
             val voiceQuality = selectedRating
 
             val audioIssues = mutableListOf<AudioIssue>()
+            if (audioPerfect?.isChecked == true) audioIssues.add(AudioIssue.CALL_PERFECT)
             if (audioIssueDropped?.isChecked == true) audioIssues.add(AudioIssue.CALL_DROPPED)
             if (audioIssueHearOther?.isChecked == true) audioIssues.add(AudioIssue.COULD_NOT_HEAR_OTHER)
             if (audioIssueHearMe?.isChecked == true) audioIssues.add(AudioIssue.OTHER_COULD_NOT_HEAR_ME)

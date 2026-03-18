@@ -10,11 +10,13 @@ data class UserFeedback(
     val comment: String? = null,
     // Network & Device metadata
     val carrier: String? = null,
-    val networkGeneration: String? = null,  // WiFi, 2G, 3G, 4G, 5G, etc.
-    val signalStrength: Int? = null,        // Signal strength in dBm
-    val latitude: Double? = null,           // Latitude of the device
-    val longitude: Double? = null,          // Longitude of the device
-    val timestamp: Long? = null             // Unix timestamp in milliseconds
+    val networkGeneration: String? = null,
+    val signalStrength: Int? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val timestamp: Long? = null,
+    val callDuration: Long? = null
+
 ) {
     init {
         require(voiceQuality == null || (voiceQuality in 1..5)) {
@@ -25,6 +27,7 @@ data class UserFeedback(
 
 @Serializable
 enum class AudioIssue {
+    CALL_PERFECT,
     CALL_DROPPED,
     COULD_NOT_HEAR_OTHER,
     OTHER_COULD_NOT_HEAR_ME,

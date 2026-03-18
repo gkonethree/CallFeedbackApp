@@ -14,7 +14,7 @@ import java.util.concurrent.Executor
 class CallStateObserver(
     context: Context,
     private val onCallStart: () -> Unit,
-    private val onCallEnd: () -> Unit
+    private val onCallEnd: (callDuration:Long) -> Unit
 ) {
 
     companion object {
@@ -25,6 +25,7 @@ class CallStateObserver(
         context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
     private var wasInCall = false
+    private var callStartTime: Long = 0
     private var observedCallStart = false
     private var phoneStateListener: PhoneStateListener? = null
     private var telephonyCallback: TelephonyCallback? = null
@@ -89,6 +90,7 @@ class CallStateObserver(
                 if (!wasInCall) {
                     wasInCall = true
                     observedCallStart = true
+                    callStartTime=System.currentTimeMillis()
                     Log.d(TAG, "Call started (observed)")
                     onCallStart()
                 }
@@ -98,10 +100,10 @@ class CallStateObserver(
                 if (wasInCall) {
                     wasInCall = false
                     if (observedCallStart) {
-
+                        val callDuration=System.currentTimeMillis()-callStartTime
                         observedCallStart = false
                         Log.d(TAG, "Call ended (observed)")
-                        onCallEnd()
+                        onCallEnd(callDuration)
                     } else {
                         Log.d(TAG, "Call ended but start was not observed — ignoring")
                     }
