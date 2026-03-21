@@ -3,7 +3,7 @@ from app.models.schemas import UserFeedback, FeedbackInDB
 from app.db import get_feedback_collection
 from app.auth import verify_api_key, verify_read_api_key
 from datetime import datetime, timezone
-from main import limiter
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/gk/feedback", tags=["feedback"])
 
