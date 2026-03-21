@@ -28,6 +28,7 @@ class UserFeedback(BaseModel):
     latitude: Optional[float] = Field(None, description="Device latitude")
     longitude: Optional[float] = Field(None, description="Device longitude")
     timestamp: Optional[int] = Field(None, description="Unix timestamp in milliseconds")
+    callDuration: Optional[int] = Field(None, description="Call duration in seconds")
 
 class FeedbackInDB(UserFeedback):
     id: str
