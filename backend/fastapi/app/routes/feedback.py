@@ -4,7 +4,7 @@ from app.db import get_feedback_collection
 from app.auth import verify_api_key, verify_read_api_key
 from datetime import datetime, timezone
 
-router = APIRouter(prefix="/feedback", tags=["feedback"])
+router = APIRouter(prefix="/gk/feedback", tags=["feedback"])
 
 
 def serialize(doc: dict) -> dict:

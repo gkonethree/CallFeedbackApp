@@ -16,6 +16,12 @@ services:
       - ./fastapi/.env
     ports:
       - "9000:8000"
+    networks:
+      - shared_net
 
 volumes:
   mongo-data:
+networks:
+  shared_net:
+    external: true
+    name: shared_net
