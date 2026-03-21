@@ -9,7 +9,7 @@ import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private const val BASE_URL = "http://dragon.wag.org.in:9000/"
+    private const val BASE_URL = "https://dragon.wag.org.in/gk/"
     private const val TIMEOUT_SECONDS = 15L
 
     private val json = Json { ignoreUnknownKeys = true }

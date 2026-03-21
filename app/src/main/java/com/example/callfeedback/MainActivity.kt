@@ -162,6 +162,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     CallFeedbackTheme {
-        Greeting("Android")
+        Text(text="This app helps you give feedback for your calls", modifier = Modifier)
     }
 }
