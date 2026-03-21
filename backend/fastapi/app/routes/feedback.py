@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Request
 from app.models.schemas import UserFeedback, FeedbackInDB
 from app.db import get_feedback_collection
 from app.auth import verify_api_key, verify_read_api_key
@@ -28,7 +28,7 @@ def serialize(doc: dict) -> dict:
 
 @router.post("", response_model=FeedbackInDB, status_code=201)
 @limiter.limit("10/minute")
-async def create_feedback(payload: UserFeedback, api_key: str = Depends(verify_api_key)):
+async def create_feedback(request: Request, payload: UserFeedback, api_key: str = Depends(verify_api_key)):
     col = get_feedback_collection()
 
     doc = {
