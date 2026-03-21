@@ -3,6 +3,7 @@ from app.models.schemas import UserFeedback, FeedbackInDB
 from app.db import get_feedback_collection
 from app.auth import verify_api_key, verify_read_api_key
 from datetime import datetime, timezone
+from main import limiter
 
 router = APIRouter(prefix="/gk/feedback", tags=["feedback"])
 
@@ -19,12 +20,14 @@ def serialize(doc: dict) -> dict:
         "signalStrength": doc.get("signalStrength"),
         "latitude": doc.get("latitude"),
         "longitude": doc.get("longitude"),
+        "callDuration": doc.get("callDuration"),
         "timestamp": doc.get("timestamp"),
         "created_at": doc.get("created_at"),
     }
 
 
 @router.post("", response_model=FeedbackInDB, status_code=201)
+@limiter.limit("10/minute")
 async def create_feedback(payload: UserFeedback, api_key: str = Depends(verify_api_key)):
     col = get_feedback_collection()
 
@@ -39,6 +42,7 @@ async def create_feedback(payload: UserFeedback, api_key: str = Depends(verify_a
         "latitude": payload.latitude,
         "longitude": payload.longitude,
         "timestamp": payload.timestamp,
+        "callDuration": payload.callDuration,
     }
 
     doc = {k: v for k, v in doc.items() if v is not None}
