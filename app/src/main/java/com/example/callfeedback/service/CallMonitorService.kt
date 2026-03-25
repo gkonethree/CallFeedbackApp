@@ -156,7 +156,6 @@ class CallMonitorService : Service() {
                 val result = repository.submitFeedback(feedback)
 
                 if (result.isSuccess) {
-                    Log.d(TAG, "Feedback submitted to backend successfully")
                 } else {
                     Log.e(TAG, "Failed to submit feedback to backend", result.exceptionOrNull())
                 }

@@ -42,7 +42,7 @@ class CallStateObserver(
             wasInCall = (initialState == TelephonyManager.CALL_STATE_OFFHOOK)
 
             observedCallStart = wasInCall
-            Log.d(TAG, "Initial call state: $initialState, wasInCall=$wasInCall, observedCallStart=$observedCallStart")
+
         } catch (t: Throwable) {
             Log.w(TAG, "Failed to read initial call state", t)
         }
@@ -83,7 +83,6 @@ class CallStateObserver(
     private fun handleCallStateChanged(state: Int) {
         when (state) {
             TelephonyManager.CALL_STATE_RINGING -> {
-                Log.d(TAG, "Phone ringing")
             }
 
             TelephonyManager.CALL_STATE_OFFHOOK -> {
@@ -91,7 +90,6 @@ class CallStateObserver(
                     wasInCall = true
                     observedCallStart = true
                     callStartTime=System.currentTimeMillis()
-                    Log.d(TAG, "Call started (observed)")
                     onCallStart()
                 }
             }
@@ -102,10 +100,9 @@ class CallStateObserver(
                     if (observedCallStart) {
                         val callDuration=System.currentTimeMillis()-callStartTime
                         observedCallStart = false
-                        Log.d(TAG, "Call ended (observed)")
                         onCallEnd(callDuration)
                     } else {
-                        Log.d(TAG, "Call ended but start was not observed — ignoring")
+
                     }
                 }
             }

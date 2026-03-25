@@ -1,5 +1,8 @@
 package com.example.callfeedback
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
 import android.Manifest
 import android.content.Intent
 import android.os.Build
@@ -21,27 +24,12 @@ import com.example.callfeedback.ui.overlay.OverlayHelper
 import com.example.callfeedback.ui.theme.CallFeedbackTheme
 import android.content.pm.PackageManager
 import android.util.Log
-import android.content.Context
-import android.net.Uri
-import android.os.PowerManager
-import android.provider.Settings
 
 class MainActivity : ComponentActivity() {
 
-    private var overlayPermissionRequested = false
-    private fun isBatteryOptimizationDisabled(): Boolean {
-        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-        return powerManager.isIgnoringBatteryOptimizations(packageName)
-    }
-
-    private fun requestDisableBatteryOptimization() {
-        val intent = Intent(
-            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
-        ).apply {
-            data = Uri.parse("package:$packageName")
-        }
-        startActivity(intent)
-    }
+    private var permissionsGranted = false
+    private var overlayHandled = false
+    private var serviceStarted = false
 
     private val requestPhonePermissionLauncher =
         registerForActivityResult(
@@ -73,23 +61,34 @@ class MainActivity : ComponentActivity() {
             } else {
                 Log.d("MainActivity", "ACCESS_FINE_LOCATION denied - location won't be collected")
             }
-            startCallMonitorService()
+            permissionsGranted = true
+            handleOverlayPermission()
         }
+
+    private fun handleOverlayPermission() {
+        try {
+            if (!OverlayHelper.canDrawOverlays(this)) {
+                val overlayIntent = OverlayHelper.requestOverlayPermissionIntent(this)
+                startActivity(overlayIntent)  // user goes to settings
+            } else {
+                overlayHandled = true
+            }
+        } catch (t: Throwable) {
+            Log.w("MainActivity", "Overlay permission error", t)
+            overlayHandled = true
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         requestPhonePermission()
-        if (!isBatteryOptimizationDisabled()) {
-            requestDisableBatteryOptimization()
-        }
 
         setContent {
             CallFeedbackTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = "Android",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -97,6 +96,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        if (!overlayHandled && OverlayHelper.canDrawOverlays(this)) {
+            overlayHandled = true
+        }
+
+        if (permissionsGranted && overlayHandled && !serviceStarted) {
+            serviceStarted = true
+
+            val intent = Intent(this, CallMonitorService::class.java)
+            ContextCompat.startForegroundService(this, intent)
+        }
+    }
     private fun requestPhonePermission() {
         if (ContextCompat.checkSelfPermission(
                 this,
@@ -131,31 +144,26 @@ class MainActivity : ComponentActivity() {
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            startCallMonitorService()
+            permissionsGranted = true
+            handleOverlayPermission()
         } else {
             requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
-    private fun startCallMonitorService() {
-        val intent = Intent(this, CallMonitorService::class.java)
-        startService(intent)
-
-        try {
-            if (!OverlayHelper.canDrawOverlays(this) && !overlayPermissionRequested) {
-                overlayPermissionRequested=true
-                val overlayIntent = OverlayHelper.requestOverlayPermissionIntent(this)
-                startActivity(overlayIntent)
-            }
-        } catch (t: Throwable) {
-            Log.w("MainActivity", "Failed to request overlay permission", t)
-        }
-    }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(text = "Hello $name!", modifier = modifier)
+fun Greeting(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Setup complete \n\nYou can close the app.\nCall feedback will be recorded automatically.",
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 @Preview(showBackground = true)

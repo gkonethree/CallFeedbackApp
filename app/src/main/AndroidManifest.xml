@@ -5,13 +5,15 @@
     <!-- Required permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
-    <!-- SYSTEM_ALERT_WINDOW is a special permission: the user must enable it in Settings (we open the settings screen from the app). Declaring it documents the intent. -->
+<!--    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />-->
+    <uses-permission android:name="android.permission.FOREGROUND_DATA_SYNC"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Only keep location permissions if your app actually uses location APIs -->
+
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -34,7 +36,7 @@
 
         <service
             android:name=".service.CallMonitorService"
-            android:foregroundServiceType="phoneCall"
+            android:foregroundServiceType="dataSync"
             android:exported="false" />
 
         <activity

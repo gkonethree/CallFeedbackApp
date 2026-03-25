@@ -48,7 +48,7 @@ object OverlayHelper {
         onFeedbackResult: ((feedback: UserFeedback?) -> Unit)? = null
     ) {
         if (overlayView != null) {
-            Log.d(TAG, "overlay already shown")
+
             return
         }
 
@@ -129,13 +129,12 @@ object OverlayHelper {
         val rootView = layout.findViewById<View>(R.id.overlay_root)
 
         closeBtn?.setOnClickListener {
-            Log.d(TAG, "Close button clicked - returning null feedback")
             onFeedbackResult?.invoke(null)
             removeOverlay(context)
         }
 
         rootView?.setOnClickListener {
-            Log.d(TAG, "Outside tap detected - returning null feedback")
+
             onFeedbackResult?.invoke(null)
             removeOverlay(context)
         }
