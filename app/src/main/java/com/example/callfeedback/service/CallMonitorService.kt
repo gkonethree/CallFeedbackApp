@@ -3,7 +3,6 @@ package com.example.callfeedback.service
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
@@ -21,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 
 class CallMonitorService : Service() {
 
@@ -65,6 +65,12 @@ class CallMonitorService : Service() {
         callStateObserver = CallStateObserver(
             context = this,
             onCallStart = {
+                try {
+                    OverlayHelper.removeOverlay(this)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Failed to remove overlay on call start", t)
+                }
+
                 updateToInCallNotification()
             },
             onCallEnd = {
@@ -202,7 +208,7 @@ class CallMonitorService : Service() {
                 submitFeedbackToRepository(baseFeedback)
                 return
             }
-
+            OverlayHelper.removeOverlay(this)
             OverlayHelper.showOverlay(this) { feedback ->
 
                 val finalFeedback = feedback?.copy(
@@ -216,6 +222,14 @@ class CallMonitorService : Service() {
                 ) ?: baseFeedback
 
                 submitFeedbackToRepository(finalFeedback)
+            }
+            serviceScope.launch {
+                delay(60_000)
+                try {
+                    OverlayHelper.removeOverlay(this@CallMonitorService)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Failed to auto-remove overlay", t)
+                }
             }
 
         } catch (t: Throwable) {
