@@ -5,8 +5,6 @@ services:
     restart: unless-stopped
     volumes:
       - mongo-data:/data/db
-    ports:
-      - "27017:27017"
     networks:
       - shared_net
 
@@ -17,8 +15,6 @@ services:
       - mongo
     env_file:
       - ./fastapi/.env
-    ports:
-      - "9000:8000"
     networks:
       - shared_net
 

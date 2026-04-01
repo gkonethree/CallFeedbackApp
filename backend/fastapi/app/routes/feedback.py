@@ -4,7 +4,6 @@ from app.db import get_feedback_collection
 from app.auth import verify_api_key, verify_read_api_key
 from datetime import datetime, timezone
 from app.core.limiter import limiter
-import logging
 
 router = APIRouter(prefix="/gk/feedback", tags=["feedback"])
 
@@ -28,7 +27,7 @@ def serialize(doc: dict) -> dict:
 
 
 @router.post("", response_model=FeedbackInDB, status_code=201)
-@limiter.limit("10/minute")
+@limiter.limit("50/minute")
 async def create_feedback(request: Request, payload: UserFeedback, api_key: str = Depends(verify_api_key)):
     col = get_feedback_collection()
 
@@ -62,10 +61,7 @@ async def get_all_feedbacks(
     api_key: str = Depends(verify_read_api_key)
 ):
     col = get_feedback_collection()
-    logger = logging.getLogger(__name__)
 
-    count = await col.count_documents({})
-    logger.info(f"Total documents in DB: {count}")
     docs = await col.find()\
         .sort("created_at", -1)\
         .skip(skip)\
