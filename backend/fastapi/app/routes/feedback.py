@@ -61,7 +61,8 @@ async def get_all_feedbacks(
     api_key: str = Depends(verify_read_api_key)
 ):
     col = get_feedback_collection()
-
+    count = await col.count_documents({})
+    print("Total documents in DB:", count)  
     docs = await col.find()\
         .sort("created_at", -1)\
         .skip(skip)\
