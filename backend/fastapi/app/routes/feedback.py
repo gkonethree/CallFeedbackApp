@@ -57,7 +57,6 @@ async def create_feedback(request: Request, payload: UserFeedback, api_key: str 
 @router.get("", response_model=list[FeedbackInDB])
 async def get_all_feedbacks(
     skip: int = 0,
-    limit: int = 50,
     api_key: str = Depends(verify_read_api_key)
 ):
     col = get_feedback_collection()
@@ -66,6 +65,6 @@ async def get_all_feedbacks(
         .sort("created_at", -1)\
         .skip(skip)\
         .limit(limit)\
-        .to_list(length=limit)
+        .to_list()
 
     return [serialize(doc) for doc in docs]
