@@ -63,8 +63,6 @@ async def get_all_feedbacks(
 
     docs = await col.find()\
         .sort("created_at", -1)\
-        .skip(skip)\
-        .limit(limit)\
-        .to_list()
+        .skip(skip).to_list()
 
     return [serialize(doc) for doc in docs]
