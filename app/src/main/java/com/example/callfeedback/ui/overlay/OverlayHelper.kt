@@ -24,6 +24,11 @@ import com.example.callfeedback.data.model.Environment
 import com.example.callfeedback.data.model.UserFeedback
 import java.lang.ref.WeakReference
 
+/**
+ * Manages the floating post-call feedback overlay lifecycle.
+ *
+ * This object enforces a single overlay instance at a time
+ **/
 object OverlayHelper {
     private const val TAG = "OverlayHelper"
     @SuppressLint("StaticFieldLeak")
@@ -36,6 +41,9 @@ object OverlayHelper {
         return Settings.canDrawOverlays(context)
     }
 
+    /**
+     * Builds an intent that opens the system overlay permission screen for this package.
+     */
     fun requestOverlayPermissionIntent(context: Context): Intent {
         val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
         intent.data = Uri.parse("package:${context.packageName}")
@@ -43,12 +51,16 @@ object OverlayHelper {
         return intent
     }
 
+    /**
+     * Displays the feedback overlay and returns collected feedback through [onFeedbackResult].
+     *
+     * Returns `null` via callback when the user dismisses the overlay without submitting.
+     */
     fun showOverlay(
         context: Context,
         onFeedbackResult: ((feedback: UserFeedback?) -> Unit)? = null
     ) {
         if (overlayView != null) {
-
             return
         }
 
@@ -206,6 +218,9 @@ object OverlayHelper {
         }
     }
 
+    /**
+     * Removes the overlay if present. Safe to call repeatedly.
+     */
     fun removeOverlay(context: Context) {
         val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         overlayView?.let {

@@ -8,7 +8,6 @@ data class UserFeedback(
     val audioIssues: List<AudioIssue>? = null,
     val environment: Environment? = null,
     val comment: String? = null,
-    // Network & Device metadata
     val carrier: String? = null,
     val networkGeneration: String? = null,
     val signalStrength: Int? = null,

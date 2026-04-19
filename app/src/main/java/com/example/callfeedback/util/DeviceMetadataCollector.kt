@@ -17,6 +17,9 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 
+/**
+ * Collects network, radio, location, and timestamp metadata.
+ */
 class DeviceMetadataCollector(private val context: Context) {
 
     companion object {
@@ -33,6 +36,9 @@ class DeviceMetadataCollector(private val context: Context) {
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
+    /**
+     * Returns the current connection family (for example WiFi, LTE, 5G/NR) when detectable.
+     */
     fun getNetworkGeneration(): String {
         return try {
             val cm = connectivityManager
@@ -68,6 +74,9 @@ class DeviceMetadataCollector(private val context: Context) {
     }
 
 
+    /**
+     * Maps telephony network constants into user-facing cellular generation labels.
+     */
     @SuppressLint("MissingPermission")
     private fun getCellularNetworkType(): String {
         return try {
@@ -102,6 +111,11 @@ class DeviceMetadataCollector(private val context: Context) {
     }
 
 
+    /**
+     * Returns signal strength in dBm from the first valid known cell entry.
+     *
+     * Returns `null` when unavailable due to SDK level, permissions, or missing cell info.
+     */
     @SuppressLint("MissingPermission")
     fun getSignalStrength(): Int? {
         return try {
@@ -157,6 +171,7 @@ class DeviceMetadataCollector(private val context: Context) {
                 }
 
                 if (dbm != null && dbm != Int.MAX_VALUE && dbm != 0) {
+                    // Int.MAX_VALUE/0 are treated as invalid placeholder values.
                     return dbm
                 }
             }
@@ -168,6 +183,11 @@ class DeviceMetadataCollector(private val context: Context) {
     }
 
 
+    /**
+     * Fetches an approximate current location and returns coordinates via callback.
+     *
+     * If permission is missing or location lookup fails, `(null, null)` is returned.
+     */
     fun getLocation(callback: (latitude: Double?, longitude: Double?) -> Unit) {
         try {
 
@@ -204,10 +224,16 @@ class DeviceMetadataCollector(private val context: Context) {
         }
     }
 
+    /**
+     * Returns the active carrier/operator display name, if available.
+     */
     fun getCarrier(): String?{
         val telephonyManager=context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         return telephonyManager.networkOperatorName
     }
+    /**
+     * Returns the current wall-clock timestamp in milliseconds.
+     */
     fun getTimestamp(): Long {
         return System.currentTimeMillis()
     }

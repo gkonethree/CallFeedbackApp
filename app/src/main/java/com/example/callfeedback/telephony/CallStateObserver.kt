@@ -11,6 +11,12 @@ import android.util.Log
 import java.util.concurrent.Executor
 
 @Suppress("DEPRECATION")
+/**
+ * Observes phone call state transitions and reports call start/end events.
+ *
+ * Uses `TelephonyCallback` on Android 12+ and falls back to `PhoneStateListener`
+ * on older versions.
+ */
 class CallStateObserver(
     context: Context,
     private val onCallStart: () -> Unit,
@@ -36,6 +42,9 @@ class CallStateObserver(
         Executor { runnable -> Handler(Looper.getMainLooper()).post(runnable) }
     }
 
+    /**
+     * Starts listening for call state updates and initializes baseline state.
+     */
     fun start() {
         try {
             val initialState = telephonyManager.callState
@@ -49,6 +58,7 @@ class CallStateObserver(
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 
+            // Android 12+: register modern telephony callback.
             telephonyCallback = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
                 override fun onCallStateChanged(state: Int) {
                     handleCallStateChanged(state)
@@ -57,6 +67,7 @@ class CallStateObserver(
             telephonyManager.registerTelephonyCallback(mainExecutor, telephonyCallback!!)
         } else {
 
+            // Pre-Android 12: fallback to deprecated listener API.
             phoneStateListener = object : PhoneStateListener() {
                 @Suppress("OVERRIDE_DEPRECATION")
                 override fun onCallStateChanged(state: Int, phoneNumber: String?) {
@@ -67,6 +78,9 @@ class CallStateObserver(
         }
     }
 
+    /**
+     * Stops listening for call state updates and resets internal state.
+     */
     fun stop() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             telephonyCallback?.let { telephonyManager.unregisterTelephonyCallback(it) }

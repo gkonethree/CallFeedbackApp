@@ -11,9 +11,7 @@ import java.util.concurrent.TimeUnit
 object ApiClient {
     private const val BASE_URL = "https://dragon.wag.org.in/gk/"
     private const val TIMEOUT_SECONDS = 15L
-
     private val json = Json { ignoreUnknownKeys = true }
-
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)

@@ -22,6 +22,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 
+/**
+ * Foreground service that observes phone call state and collects post-call feedback metadata.
+ *
+ * The service keeps a low-priority ongoing notification to satisfy background execution
+ * requirements and switches notification text while a call is active.
+ */
 class CallMonitorService : Service() {
 
     companion object {
@@ -33,6 +39,10 @@ class CallMonitorService : Service() {
     private lateinit var callStateObserver: CallStateObserver
     private var isForegroundNotificationShown = false
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    /**
+     * Builds the default foreground notification shown while waiting for call events.
+     */
     private fun createMinimalNotification(): Notification {
         ensureChannelExists(getSystemService(NotificationManager::class.java))
 
@@ -44,6 +54,9 @@ class CallMonitorService : Service() {
             .build()
     }
 
+    /**
+     * Updates the ongoing notification while an active call is detected.
+     */
     private fun updateToInCallNotification() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("In call")
@@ -75,6 +88,7 @@ class CallMonitorService : Service() {
             },
             onCallEnd = {
                 callDuration:Long ->
+                // Restore idle notification content after call completion.
                 val manager = getSystemService(NotificationManager::class.java)
                 manager.notify(NOTIFICATION_ID, createMinimalNotification())
                 collectAndHandleCallEnd(callDuration)
@@ -85,6 +99,9 @@ class CallMonitorService : Service() {
     }
 
 
+    /**
+     * Ensures call observation remains active if the service is restarted.
+     */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if(!::callStateObserver.isInitialized){
             callStateObserver.start()
@@ -92,6 +109,9 @@ class CallMonitorService : Service() {
         return START_STICKY
     }
 
+    /**
+     * Stops telephony listeners, cancels pending work, and clears notifications/overlay.
+     */
     override fun onDestroy() {
         super.onDestroy()
         callStateObserver.stop()
@@ -107,6 +127,9 @@ class CallMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
 
+    /**
+     * Creates the notification channel if it does not already exist.
+     */
     private fun ensureChannelExists(manager: NotificationManager?) {
 
         manager ?: return
@@ -122,30 +145,6 @@ class CallMonitorService : Service() {
 
     }
 
-//    private fun notifyFeedbackAvailable() {
-//        val manager = getSystemService(NotificationManager::class.java)
-//        ensureChannelExists(manager)
-//
-//        val feedbackIntent = Intent(this, FeedbackActivity::class.java).apply {
-//            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-//        }
-//
-//        val pendingIntentFlags =
-//            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-//
-//        val pendingIntent = PendingIntent.getActivity(this, 0, feedbackIntent, pendingIntentFlags)
-//
-//        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-//            .setContentTitle("Share call feedback")
-//            .setContentText("Tap to provide feedback about your recent call")
-//            .setSmallIcon(R.drawable.ic_launcher_foreground)
-//            .setContentIntent(pendingIntent)
-//            .setAutoCancel(true)
-//            .build()
-//
-//        manager?.notify(NOTIFICATION_ID + 1, notification)
-//    }
-
     @Suppress("unused")
     private fun launchFeedbackScreen() {
         val intent = Intent(this, FeedbackActivity::class.java).apply {
@@ -154,6 +153,9 @@ class CallMonitorService : Service() {
         startActivity(intent)
     }
 
+    /**
+     * Submits collected feedback asynchronously to the backend repository.
+     */
     private fun submitFeedbackToRepository(feedback: UserFeedback) {
 
         val repository = FeedbackRepository()
@@ -171,6 +173,9 @@ class CallMonitorService : Service() {
         }
     }
 
+    /**
+     * Collects metadata at call end and forwards it to the feedback UI flow.
+     */
     private fun collectAndHandleCallEnd(callDuration:Long) {
         val metadataCollector = DeviceMetadataCollector(this)
         val networkGeneration = metadataCollector.getNetworkGeneration()
@@ -183,6 +188,9 @@ class CallMonitorService : Service() {
         }
     }
 
+    /**
+     * Shows the feedback overlay when allowed; otherwise submits metadata-only feedback.
+     */
     private fun showFeedbackUI(
         carrier: String?,
         networkGeneration: String,

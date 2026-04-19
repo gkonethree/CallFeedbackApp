@@ -9,6 +9,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
+/**
+ * Feedback form used to capture a call quality rating and optional comment.
+ *
+ * @param initialRating Initial slider value (1..5 range expected by the UI).
+ * @param initialComment Pre-filled comment text.
+ * @param onSubmit Invoked when the user submits feedback with the selected rating/comment.
+ */
 @Composable
 fun FeedbackScreen(
     initialRating: Int = 3,
