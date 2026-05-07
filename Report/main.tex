@@ -85,7 +85,7 @@
 
 
 \begin{abstract}
-We present a mobile system for collecting and analyzing user-reported feedback on cellular call quality. The system integrates an Android-based client that captures post-call subjective feedback alongside automatically collected network metadata, including signal strength, network type, and location. This combined dataset enables large-scale analysis of call performance across carriers and environments. By correlating user experience with objective network conditions, our framework provides a foundation for identifying patterns in call quality and supports data-driven evaluation of cellular network performance.
+We present a mobile system for collecting and analyzing user-reported feedback on cellular call quality. The system integrates an Android-based client that captures post-call subjective feedback alongside automatically collected network metadata, including signal strength, network type, and location. This combined dataset enables large-scale analysis of call performance across carriers and environments. By correlating user experience with objective network conditions, our framework provides a foundation for identifying patterns in call quality and supports data-driven evaluation of cellular network performance. The source code is available at \url{https://github.com/gkonethree/CallFeedbackApp}
 \end{abstract}
 
 
@@ -171,12 +171,12 @@ Alongside user input, the client automatically collects device and network metad
     \item Carrier Name
     \item Network type (WiFi, 2G, 3G, 4G, 5G).
     \item Signal strength in dBm.
-    \item Approximate geographic location (if permission is granted).
+    \item Approximate geographic location 
+    \item Call Duration
     \item Timestamp of feedback submission.
 \end{itemize}
-
 This data is collected without additional user interaction.\\
-Checking if Wi-Fi calling is enabled is not permitted by Android because Wi-Fi calling is treated as carrier-managed telephony, not app-level networking.
+
 
 \section{Feedback}
 
@@ -184,7 +184,7 @@ Checking if Wi-Fi calling is enabled is not permitted by Android because Wi-Fi c
 The overlay with user feedback has the following:
 \begin{itemize}
     \item \textbf{Voice Quality} Rating stars from 1-5
-    \item \textbf{Audio Issues} Multiple selectable options including Call Dropped, Can't Hear them, They can't hear, background noise, echo.
+    \item \textbf{Audio Issues} Multiple selectable options including Perfect Call, Call Dropped, Can't Hear them, They can't hear, background noise, echo.
     \item \textbf{Environment} Single selectable from Indoor, Outdoor, In Vehicle, Noisy Area.
     \item \textbf{Comments} Additional subjective feedback by the user
 \end{itemize}
